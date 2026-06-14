@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useAuth } from "@/store/auth";
+import { useAdminAuth } from "@/store/adminAuth";
 import { useHydrated } from "@/lib/useHydrated";
 import { Breadcrumbs } from "./Breadcrumbs";
 import * as I from "./icons";
@@ -19,10 +21,17 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
   const router = useRouter();
   const account = useAuth((s) => s.current);
   const logout = useAuth((s) => s.logout);
+  const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
+  const adminReady = useAdminAuth((s) => s.ready);
+  const adminCheck = useAdminAuth((s) => s.check);
 
-  if (!hydrated) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
+  useEffect(() => {
+    adminCheck();
+  }, [adminCheck]);
 
-  if (!account) {
+  if (!hydrated || !adminReady) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
+
+  if (!account && !adminLoggedIn) {
     return (
       <div className="container-site py-8">
         <Breadcrumbs items={[{ label: "Личный кабинет" }]} />
@@ -49,8 +58,10 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
       <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
         <aside>
           <div className="card mb-4 p-5">
-            <p className="text-sm font-medium text-ink">{account.firstName} {account.lastName}</p>
-            <p className="mt-0.5 text-xs text-muted">{account.phone}</p>
+            <p className="text-sm font-medium text-ink">
+              {account ? `${account.firstName} ${account.lastName}` : "Администратор"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted">{account ? account.phone : "Служебный вход"}</p>
           </div>
           <nav className="card overflow-hidden">
             {nav.map((item) => {
