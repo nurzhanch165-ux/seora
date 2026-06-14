@@ -73,8 +73,8 @@ export function Header() {
       </div>
 
       {/* Main bar */}
-      <div className="container-site flex h-16 items-center justify-between gap-4 md:h-20">
-        <div className="flex items-center gap-3">
+      <div className="container-site flex h-16 items-center justify-between gap-2 sm:gap-4 md:h-20">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             className="btn-ghost -ml-2 px-2 lg:hidden"
             onClick={() => setMobileOpen(true)}
@@ -83,7 +83,7 @@ export function Header() {
             <I.Menu />
           </button>
           <Link href="/" className="select-none">
-            <span className="font-serif text-2xl font-light tracking-[0.28em] text-ink md:text-[26px]">
+            <span className="font-serif text-2xl font-light tracking-[0.18em] text-ink sm:tracking-[0.28em] md:text-[26px]">
               {site.name}
             </span>
           </Link>
@@ -114,18 +114,18 @@ export function Header() {
         </nav>
 
         {/* Icons */}
-        <div className="flex items-center gap-1">
-          <button className="btn-ghost px-2.5" onClick={() => setSearchOpen(true)} aria-label="Поиск">
+        <div className="flex items-center gap-0.5 sm:gap-1">
+          <button className="btn-ghost px-2 sm:px-2.5" onClick={() => setSearchOpen(true)} aria-label="Поиск">
             <I.Search />
           </button>
-          <Link href="/account/wishlist" className="btn-ghost relative px-2.5" aria-label="Избранное">
+          <Link href="/account/wishlist" className="btn-ghost relative px-2 sm:px-2.5" aria-label="Избранное">
             <I.Heart />
             {hydrated && wishCount > 0 && <Badge>{wishCount}</Badge>}
           </Link>
-          <Link href={currentId ? "/account" : "/login"} className="btn-ghost px-2.5" aria-label="Кабинет">
+          <Link href={currentId ? "/account" : "/login"} className="btn-ghost px-2 sm:px-2.5" aria-label="Кабинет">
             <I.User />
           </Link>
-          <Link href="/cart" className="btn-ghost relative px-2.5" aria-label="Корзина">
+          <Link href="/cart" className="btn-ghost relative px-2 sm:px-2.5" aria-label="Корзина">
             <I.Bag />
             {hydrated && cartCount > 0 && <Badge>{cartCount}</Badge>}
           </Link>

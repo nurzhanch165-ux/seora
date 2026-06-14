@@ -348,9 +348,9 @@ function ProductsAdmin() {
         <p className="mb-5 rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{actionError}</p>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((p) => (
-          <div key={p.id} className="flex gap-3 rounded-xl2 border border-line bg-surface p-3">
+          <div key={p.id} className="flex min-w-0 gap-3 rounded-xl2 border border-line bg-surface p-3">
             <ProductVisual
               tone={p.tone}
               glyph={p.glyph}
