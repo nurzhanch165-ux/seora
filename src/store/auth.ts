@@ -31,8 +31,14 @@ type AuthState = {
 };
 
 function rpcError(error: unknown): Result {
-  const message = error instanceof Error ? error.message : "Ошибка соединения. Попробуйте ещё раз.";
-  return { ok: false, error: message };
+  // Supabase возвращает PostgrestError (не экземпляр Error) — достаём его message/details.
+  if (error && typeof error === "object") {
+    const e = error as { message?: string; details?: string; hint?: string };
+    const message = e.message || e.details || e.hint;
+    if (message) return { ok: false, error: message };
+  }
+  if (error instanceof Error && error.message) return { ok: false, error: error.message };
+  return { ok: false, error: "Ошибка соединения. Попробуйте ещё раз." };
 }
 
 export const useAuth = create<AuthState>()(

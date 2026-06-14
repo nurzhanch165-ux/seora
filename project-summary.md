@@ -2,6 +2,7 @@
 
 > Этот файл — краткое и полное описание проекта для продолжения работы в новом чате.
 > Вставьте его содержимое в начало нового диалога, чтобы ассистент сразу понял контекст.
+> **Последнее обновление:** июнь 2026 — подключён Supabase, задеплоено на Vercel, код на GitHub.
 
 ---
 
@@ -26,185 +27,311 @@
 
 - **Next.js 14.2.5** (App Router) + **React 18.3** + **TypeScript 5.5**
 - **Tailwind CSS 3.4** — стилизация, собственная дизайн-система
-- **Zustand 4.5** — состояние (корзина, авторизация, заказы, избранное, каталог), с `persist` в `localStorage`
+- **Zustand 4.5** — клиентское состояние (корзина, избранное, сессия ЛК, кэш каталога/заказов)
+- **Supabase** (PostgreSQL + Storage) — общая БД: каталог, клиенты, заказы
+- **@supabase/supabase-js 2.45** — клиент Supabase (браузер + сервер)
 - **xlsx (SheetJS) 0.18.5** — генерация Excel-файлов в браузере
-- Шрифты через `next/font/google`: **Lora** (заголовки, поддержка кириллицы) + **Inter** (текст)
+- **server-only** — маркер серверных модулей
+- Шрифты: **Lora** + **Inter** (через `next/font/google`)
 
-Почему так: заказчик выбрал стек, ориентированный на максимальное качество дизайна и быстрый запуск без сервера.
+### Что где хранится (после миграции на Supabase)
 
-> ВАЖНО: пока **нет бэкенда и базы данных**. Все данные (клиенты, заказы, корзина, избранное, правки и добавленные в админке товары вместе с фото) хранятся в `localStorage` браузера каждого пользователя. Это позволяет запустить и показать все сценарии без сервера, НО данные не общие между устройствами (админ на своём устройстве не видит заказы клиентов с других устройств; правки каталога видит только тот браузер, где их сделали). Переход на общую БД — первая задача этапа 2 (см. раздел 8).
+| Данные | Где |
+|--------|-----|
+| Каталог товаров | Таблица `products` в Supabase |
+| Клиенты (логин, профиль, bcrypt-пароль) | Таблица `customers` + RPC-функции |
+| Заказы и позиции | Таблицы `orders`, `order_items` |
+| Фото товаров | Supabase Storage `product-images` (публичный) |
+| Скриншоты оплаты | Supabase Storage `payment-screenshots` (приватный, signed URL) |
+| Корзина, избранное | `localStorage` (как и раньше) |
+| Текущий клиент в ЛК | `localStorage` (`seora-auth`, без пароля) |
+| Сессия админа | httpOnly-cookie `seora_admin` (сервер) |
+
+> **ВАЖНО:** каталог, клиенты и заказы теперь **общие для всех устройств** через Supabase. Админ видит заказы всех клиентов; правки каталога в админке видны всем.
 
 ---
 
-## 3. Дизайн-система
+## 3. Продакшен: ссылки и аккаунты
+
+### Сайт (Vercel)
+
+- **Основная ссылка:** https://seora-shop.vercel.app
+- Также работает: https://seora-nine.vercel.app (старый alias Vercel)
+- `seora.vercel.app` — **занят** другим проектом на Vercel, использовать нельзя
+- Панель: https://vercel.com/nurzhan1/seora
+- Проект Vercel: `nurzhan1/seora`
+
+### GitHub
+
+- **Репозиторий:** https://github.com/nurzhanch165-ux/seora
+- Ветка: `main`
+- Git подключён к Vercel → **авто-деплой при `git push`**
+
+### Supabase
+
+- **Организация:** `seora`
+- **Проект:** `nurzhanch165-ux's Project`
+- **Project ref / id:** `tmdakiocltbfjawkdwdw`
+- **Регион:** `ap-northeast-2` (Сеул)
+- **URL:** `https://tmdakiocltbfjawkdwdw.supabase.co`
+- **Панель:** https://supabase.com/dashboard/project/tmdakiocltbfjawkdwdw
+- В проекте доступен **Supabase MCP** (Cursor plugin)
+
+### Учётные данные
+
+- **Администратор сайта:** логин `admin`, пароль `admin123` (env: `ADMIN_LOGIN`, `ADMIN_PASSWORD`)
+- **Клиент:** регистрация на `/register`, вход на `/login` по придуманному логину
+
+### Переменные окружения
+
+Файл-образец: `.env.example`. Локально: `.env.local` (в git не попадает).
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://tmdakiocltbfjawkdwdw.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable/anon key из Supabase Settings → API>
+SUPABASE_SERVICE_ROLE_KEY=<secret key — ТОЛЬКО сервер, никогда в браузер>
+ADMIN_LOGIN=admin
+ADMIN_PASSWORD=admin123
+```
+
+На Vercel те же переменные заданы в **Project → Settings → Environment Variables** (Production).
+
+> **Безопасность:** `SUPABASE_SERVICE_ROLE_KEY` обходит RLS — хранить только на сервере. Если ключ утёк в чат — **ротировать** в Supabase Dashboard → Settings → API.
+
+---
+
+## 4. Дизайн-система
 
 - Палитра (в `tailwind.config.ts`): тёплая «бумажная» база `paper #F4F1EA`, поверхности `surface`, текст `ink #1A1A17`, приглушённый `muted`, акцент-терракота `accent #9B5B3F`, статусные цвета `sale`, `success`.
 - Стиль — luxury-минимализм (много воздуха, сериф-заголовки, сдержанный акцент).
-- Глобальные классы и компоненты-утилиты в `src/app/globals.css`: `.btn-primary/.btn-outline/.btn-ghost/.btn-accent`, `.card`, `.field`, `.field-label`, `.chip`, `.eyebrow`, `.h-display`, `.container-site`, `.link-underline`.
-- **Иконки нарисованы вручную** в `src/components/icons.tsx` (тонкие линии, единый стиль, без сторонних библиотек и эмодзи).
-- Обложка товара: компонент `src/components/ProductVisual.tsx`. Если у товара есть загруженные фото (`images`), показывается **фото** (object-cover); если нет — фирменная **градиентная карточка с глифом категории**.
+- Глобальные классы в `src/app/globals.css`: `.btn-primary/.btn-outline/.btn-ghost/.btn-accent`, `.card`, `.field`, `.field-label`, `.chip`, `.eyebrow`, `.h-display`, `.container-site`, `.link-underline`.
+- **Иконки нарисованы вручную** в `src/components/icons.tsx`.
+- Обложка товара: `src/components/ProductVisual.tsx` — фото из Storage (`images[]`) или градиент с глифом.
 
 ---
 
-## 4. Структура проекта
+## 5. Архитектура бэкенда (Supabase + серверные роуты)
+
+### Схема БД
+
+Полный SQL: `supabase/schema.sql` (применён к проекту через Supabase MCP).
+
+**Таблицы:**
+- `customers` — клиенты (`password_hash` bcrypt через pgcrypto, **никогда не отдаётся клиенту**)
+- `products` — каталог (id текстом: `p01`, `h01`, добавленные — `ap...`)
+- `orders` — заказы (`customer` и `delivery` как jsonb-снимки)
+- `order_items` — позиции заказа
+
+**RLS:**
+- `products` — публичное чтение (anon)
+- `customers`, `orders`, `order_items` — **без политик для anon**; доступ только через RPC и серверные роуты с `service_role`
+
+**RPC-функции (security definer):**
+- `register_customer` — регистрация
+- `authenticate_customer` — вход по логину или телефону + пароль
+- `change_password` — смена пароля (нужен текущий)
+- `reset_password` — сброс по логину + телефону
+- `update_customer_profile` — обновление профиля и логина
+
+**Storage buckets:**
+- `product-images` — публичный (фото товаров)
+- `payment-screenshots` — приватный (скриншоты оплаты, отдаются через signed URL)
+
+### Серверные API-роуты (`src/app/api/`)
+
+| Роут | Назначение |
+|------|------------|
+| `POST /api/admin/login` | Вход админа → httpOnly-cookie |
+| `POST /api/admin/logout` | Выход админа |
+| `GET /api/admin/me` | Проверка сессии админа |
+| `POST /api/admin/products` | Создание/обновление товара (upsert) |
+| `DELETE /api/admin/products?id=` | Удаление товара |
+| `POST /api/admin/upload` | Загрузка фото в Storage → URL |
+| `GET /api/orders?customerId=` | Заказы клиента |
+| `GET /api/orders` | Все заказы (только админ) |
+| `POST /api/orders` | Создание заказа |
+| `PATCH /api/orders/[id]` | Смена статуса / подтверждение оплаты (админ) |
+| `POST /api/orders/[id]/screenshot` | Загрузка скриншота оплаты |
+| `POST /api/seed` | Заливка seed-каталога (только админ) |
+
+### Клиенты Supabase
+
+- `src/lib/supabase/client.ts` — `getSupabase()` для браузера (anon key, ленивая инициализация)
+- `src/lib/supabase/admin.ts` — `createAdminClient()` с `service_role` (**только сервер**)
+- `src/lib/supabase/products.ts` — маппинг `Product` ↔ snake_case строки БД
+- `src/lib/supabase/orders.ts` — маппинг заказов + signed URL для скриншотов
+- `src/lib/adminAuth.server.ts` — проверка админа по cookie
+
+---
+
+## 6. Структура проекта (актуальная)
 
 ```
 src/
   app/
-    layout.tsx                  корневой макет (шрифты, Header, Footer, FloatingContacts)
-    globals.css                 дизайн-система и утилиты
-    page.tsx                    Главная (баннер, разделы, хиты/новинки/акции — динамические, бренды, CTA)
-    not-found.tsx               страница 404
-    c/[...slug]/page.tsx        каталог: раздел / категория / подкатегория (layout сервер + клиентский CatalogBrowser)
-    product/[slug]/page.tsx     карточка товара (КЛИЕНТСКАЯ: читает товар из catalog store по slug)
-    cart/page.tsx               корзина
-    checkout/page.tsx           оформление заказа (контакты, доставка, комментарий, согласия)
-    checkout/success/page.tsx   успех: реквизиты оплаты, скачать Excel, загрузить скриншот
-    account/page.tsx            ЛК: список заказов, статусы, Excel, скриншот оплаты
-    account/profile/page.tsx    ЛК: профиль — смена логина и данных + отдельный блок смены пароля
-    account/wishlist/page.tsx   ЛК: избранное
-    register/page.tsx           регистрация (Логин, Пароль, ФИО, страна, город, телефон, WhatsApp, Telegram, email опц.)
-    login/page.tsx              ЕДИНЫЙ вход: по ЛОГИНУ (клиент или админ); ссылка «Забыли пароль?»
-    forgot/page.tsx             восстановление пароля (логин + телефон → новый пароль)
-    admin/page.tsx              админка: Заказы / Склад (общий Excel) / Товары (полное редактирование каталога)
-    admin/login/page.tsx        отдельная страница входа администратора
-    search/page.tsx             поиск по товарам (читает catalog store — находит и добавленные товары)
-    sale/page.tsx               акции (КЛИЕНТСКАЯ, читает catalog store)
-    brands/page.tsx             список брендов
-    brands/[slug]/page.tsx      товары бренда (layout сервер + клиентский BrandProducts)
-    contacts/page.tsx, about/page.tsx, delivery/page.tsx   инфо-страницы
-  components/
-    icons.tsx                   собственный набор SVG-иконок (есть Edit, Trash, Plus, Close и т.д.)
-    Glyph.tsx                   маппинг ключа категории -> иконка
-    ProductVisual.tsx           обложка товара: фото (если images) или градиент с глифом
-    ProductCard.tsx             карточка товара в каталоге (в корзину / в избранное)
-    ProductGrid.tsx             сетка карточек (КЛИЕНТСКАЯ: накладывает правки и убирает удалённые из catalog store)
-    ProductDetail.tsx           подробная карточка товара (все поля ТЗ + галерея фото)
-    CatalogView.tsx             фильтры (бренд, цена, подборки), сортировка, листинг
-    CatalogBrowser.tsx          КЛИЕНТСКИЙ: берёт товары раздела/категории/подкатегории из catalog store → CatalogView
-    BrandProducts.tsx           КЛИЕНТСКИЙ: товары бренда из catalog store → CatalogView
-    FeaturedGrid.tsx            КЛИЕНТСКИЙ: подборки на главной (hit/new/sale) из catalog store
-    Header.tsx, Footer.tsx, FloatingContacts.tsx, Breadcrumbs.tsx, SectionHeading.tsx
-    AccountShell.tsx            оболочка ЛК (навигация, защита по входу)
-    PaymentUpload.tsx           загрузка скриншота оплаты
-    admin/ProductEditor.tsx     КЛИЕНТСКИЙ: полная форма создания/редактирования товара + загрузка фото (data URL)
-  data/
-    categories.ts               полное дерево категорий и подкатегорий из ТЗ (2 раздела) + getSection/getCategory
-    products.ts                 БАЗОВЫЙ каталог (seed) со всеми полями; тип Product (есть images?: string[])
-    brands.ts                   бренды + brandName()
-    site.ts                     настройки: название, валюта (₸), контакты, реквизиты оплаты
+    api/                        серверные роуты (см. раздел 5)
+    ...страницы как раньше...
   lib/
-    types.ts                    типы Order, Customer, Delivery + 11 статусов заказа
-    excel.ts                    exportOrderExcel (заказ) и exportWarehouseExcel (склад)
-    format.ts                   форматирование цены/даты/чисел
-    useHydrated.ts              хук защиты от рассинхрона SSR/CSR
+    supabase/                   client, admin, products, orders
+    adminAuth.server.ts         серверная авторизация админа
+    types.ts, excel.ts, format.ts, useHydrated.ts
   store/
-    cart.ts                     корзина (zustand + persist), резолвит товары через catalog store
-    wishlist.ts                 избранное
-    auth.ts                     клиенты: регистрация/вход ПО ЛОГИНУ, смена логина/пароля, сброс пароля, профиль
-    adminAuth.ts                вход администратора (логин/пароль)
-    orders.ts                   заказы
-    catalog.ts                  РЕДАКТИРУЕМЫЙ каталог: seed + overrides + added − removed; хуки useCatalogProducts() и др.
+    catalog.ts                  читает products из Supabase; админ-запись через API
+    auth.ts                     RPC Supabase; current в localStorage (без пароля)
+    orders.ts                   CRUD через API; скриншоты в Storage
+    adminAuth.ts                cookie-сессия через /api/admin/*
+    cart.ts, wishlist.ts        localStorage (без изменений)
+  data/
+    products.ts                 SEED (25 товаров); залит в БД через scripts/seed.ts
+    categories.ts, brands.ts, site.ts
+supabase/
+  schema.sql                    полная схема БД + RPC + RLS
+scripts/
+  seed.ts                       заливка seed в Supabase (npx tsx scripts/seed.ts)
+.env.example                    список env-переменных
 ```
 
 ---
 
-## 5. Авторизация (важно — переписано)
+## 7. Авторизация
 
-- **Вход по логину** (`/login`): одно поле «Логин» + пароль. Сначала проверяется админ (`adminAuth`), затем клиент по логину. У клиента есть резервный вход по номеру телефона (для старых аккаунтов без логина).
-- **Регистрация** (`/register`): клиент придумывает **логин** (≥3 символов) и **пароль** (≥4). Проверяется уникальность логина и телефона.
-- **«Забыли пароль?»** (`/forgot`): без сервера/почты — клиент подтверждает, что аккаунт его (логин + телефон при регистрации), и задаёт новый пароль (`resetPassword`).
-- **Профиль** (`/account/profile`): редактирование логина и всех данных (с проверкой уникальности логина/телефона) + отдельный блок «Смена пароля» (нужен текущий пароль; `changePassword`).
-- Тип `Account` (в `store/auth.ts`) = `Customer & { id, login, password, agreeData, agreeMarketing, createdAt }`.
-- Функции `normalizeLogin`/`normalizePhone` безопасны к `undefined`/`null` (важно: старые аккаунты в localStorage могли быть без поля `login` — иначе падало `Cannot read properties of undefined (reading 'trim')`).
-- Учётные данные администратора по умолчанию: логин `admin`, пароль `admin123` (в `src/store/adminAuth.ts`).
+### Клиенты
 
----
+- Вход по **логину** (или телефону для старых аккаунтов) + пароль.
+- Пароли хранятся как **bcrypt-хеш** в `customers.password_hash`.
+- Браузер вызывает RPC через `getSupabase().rpc(...)` — хеш никогда не уходит на клиент.
+- После входа в `store/auth.ts` хранится `current: Account` (без поля password) в localStorage (`seora-auth`).
+- Регистрация, профиль, смена/сброс пароля — всё через RPC (см. `supabase/schema.sql`).
 
-## 6. Каталог и его редактирование (важно — новое)
+### Администратор
 
-Каталог теперь **полностью редактируется админом**, и правки сразу видны на витрине (всё в localStorage, ключ `seora-catalog`).
+- Логин/пароль проверяются **на сервере** (`src/lib/adminAuth.server.ts`).
+- Успешный вход → httpOnly-cookie `seora_admin` (sha256 от `ADMIN_LOGIN:ADMIN_PASSWORD`).
+- `store/adminAuth.ts` — `check()` / `login()` / `logout()` через `/api/admin/*`.
+- Все роуты админки и API защищены `isAdminRequest()`.
 
-- `src/store/catalog.ts` — единый источник правды витрины:
-  - `overrides: Record<id, Partial<Product>>` — правки к товарам,
-  - `added: Product[]` — новые товары, добавленные в админке,
-  - `removed: string[]` — id скрытых/удалённых товаров,
-  - действия: `addProduct`, `updateProduct(id, patch)`, `removeProduct(id)`, `restoreProduct(id)`, `resetAll`,
-  - `mergeCatalog(state)` — чистая функция склейки: `seed − removed` с наложением overrides, плюс `added`,
-  - хук `useCatalogProducts()` — итоговый список (до гидрации возвращает seed, чтобы не было рассинхрона SSR/CSR),
-  - хук `useCatalogProductBySlug(slug)`.
-- `data/products.ts` — это **seed** (стартовый каталог). Тип `Product` получил необязательное поле `images?: string[]` (data URL загруженных фото).
-- Витрина читает каталог из store:
-  - листинг `c/[...slug]` → `CatalogBrowser`, бренд → `BrandProducts`, акции `/sale` и поиск `/search` → `useCatalogProducts()`,
-  - карточка товара `/product/[slug]` — клиентская, ищет товар в store (поэтому добавленные товары открываются по прямой ссылке; если не найден — экран «Товар не найден»),
-  - `ProductGrid` накладывает свежие правки и убирает удалённые,
-  - корзина и оформление резолвят товары через `useCatalogProducts()` (добавленные товары корректно покупаются),
-  - на главной подборки «Хиты/Новинки/Акции» (`FeaturedGrid`) строятся динамически: бейдж `hit` → хиты, `new` → новинки, `sale` или заполненная `oldPrice` → акции.
-- **Админка → вкладка «Товары»** (`admin/page.tsx` + `components/admin/ProductEditor.tsx`):
-  - список ВСЕГО каталога карточками с поиском,
-  - «Изменить» у любого товара → полный редактор (название, бренд, раздел/категория/подкатегория, цена и старая цена, остаток, объём, граммовка, срок, страна, производитель, сертификаты, рейтинг, отзывы, бейджи, все описания, иконка/тон обложки),
-  - «Добавить товар» → тот же редактор; slug генерируется транслитерацией названия + id,
-  - **загрузка фото** (одна или несколько) — читаются как data URL и кладутся в `images`,
-  - удаление (с подтверждением) и возврат удалённых базовых товаров.
-- Старый демо-стор `store/adminProducts.ts` удалён (заменён на `store/catalog.ts`).
+### Единый вход `/login`
+
+Сначала проверяется админ (cookie API), затем клиент (RPC Supabase).
 
 ---
 
-## 7. Запуск, доступ, учётные данные
+## 8. Каталог и админка товаров
 
-Установка и запуск:
+- **Витрина:** `useCatalogProducts()` → `supabase.from('products').select('*')`. До загрузки показывает seed из `data/products.ts`.
+- **Админка → Товары:** создание/редактирование/удаление через `/api/admin/products`.
+- **Фото:** загрузка через `/api/admin/upload` → Supabase Storage `product-images` → публичный URL в `products.images[]`.
+- **Seed:** 25 товаров залиты в БД. Повторная заливка: `npx tsx scripts/seed.ts` или `POST /api/seed` (под админом).
+- Soft-delete (`removed`/`overrides` в localStorage) **убран** — удаление теперь реальное (DELETE в БД).
+
+---
+
+## 9. Заказы
+
+- Создание: `POST /api/orders` при оформлении (`checkout/page.tsx`).
+- Клиент видит свои заказы: `GET /api/orders?customerId=<uuid>`.
+- Админ видит все: `GET /api/orders` (нужна cookie админа).
+- Скриншот оплаты: `POST /api/orders/[id]/screenshot` → Storage `payment-screenshots`.
+- Подтверждение оплаты / смена статуса: `PATCH /api/orders/[id]` (админ).
+- Excel по-прежнему генерируется на клиенте (`src/lib/excel.ts`).
+
+---
+
+## 10. Запуск и деплой
+
+### Локально
+
 ```bash
 npm install
-npm run dev      # http://localhost:3000 (если занят — 3001; слушает 0.0.0.0 — доступно в локальной сети)
-npm run build    # production-сборка
-npm start        # запуск production
+cp .env.example .env.local   # заполнить ключи Supabase
+npm run dev                    # http://localhost:3000
+npm run build                  # production-сборка
 ```
 
-Доступ в локальной сети: `http://<IP-компьютера>:3000` (или 3001). Нужно разрешить Node.js в брандмауэре Windows (частные сети).
+Заливка каталога в Supabase:
+```bash
+npx tsx scripts/seed.ts
+```
 
-Учётные данные:
-- **Клиент**: зарегистрироваться на `/register`. Логин — то, что придумал клиент. Вход на `/login` по логину.
-- **Администратор**: на `/login` или `/admin/login`. По умолчанию логин `admin`, пароль `admin123`.
-- Чтобы заказы появились в админке на ТОМ ЖЕ устройстве/браузере — оформить тестовый заказ.
+### Деплой на Vercel
 
-> Сброс локальных данных при тестах: в консоли браузера `localStorage.clear(); location.reload();` (или удалить конкретные ключи — см. раздел 9).
+**Автоматически** при `git push` в `main` (GitHub подключён к Vercel).
 
----
+**Вручную** (если нужно):
+```powershell
+Set-Location "c:\Users\nurzh\Projects\каталог корейской косметики"
+npx vercel --prod --yes
+```
 
-## 8. Известные ограничения и что делать дальше (этап 2)
+### Git
 
-Ограничения текущей версии:
-1. Нет общей базы данных — данные локальные в браузере (см. предупреждение в разделе 2). Для общего доступа админа к заказам, общего каталога и публикации в интернете это нужно изменить в первую очередь.
-2. Авторизация и админ-доступ — клиентские (демо). Для продакшена нужна серверная авторизация и хеширование паролей. «Забыли пароль» сейчас без почты/SMS — просто сверка логина и телефона.
-3. Фото товаров хранятся как data URL в localStorage (демо). В проде — загрузка файлов в Storage и ссылки в БД.
-4. Сейчас только русский язык; нет онлайн-оплаты и реальных уведомлений.
+```powershell
+git add .
+git commit -m "описание изменений"
+git push
+```
 
-План развития (приоритеты сверху вниз):
-1. **Supabase** (PostgreSQL + Auth + Storage): таблицы `products`, `categories`, `customers`, `orders`, `order_items`; хранение скриншотов оплаты и фото товаров в Storage. Перенести чтение/запись из `store/*` (catalog, auth, orders) и `data/products.ts` на Supabase. (В проекте доступен Supabase MCP.)
-2. **Деплой на Vercel** — публичная ссылка вида `seora.vercel.app`.
-3. Серверная админка и роли (админ / менеджер / склад).
-4. Онлайн-оплата (Stripe / PayPal / локальные и корейские системы).
-5. Уведомления: email, Telegram-бот, WhatsApp, SMS.
-6. Мультиязычность (рус / кор / англ / каз / узб) — например `next-intl`.
-7. Оптовые клиенты и цены, минимальная сумма заказа, прайс-листы.
-8. Автоматический расчёт доставки, интеграция с CRM / Google Sheets.
+Репозиторий: https://github.com/nurzhanch165-ux/seora
+
+> На Windows после установки Git может понадобиться **перезапуск Cursor**, чтобы `git` был в PATH. Или использовать полный путь: `C:\Program Files\Git\cmd\git.exe`.
 
 ---
 
-## 9. Важные технические детали (чтобы не было путаницы)
+## 11. Что было сделано в чате (июнь 2026)
 
-- Товары идентифицируются по `product.id` (например `p01`, `h01`; добавленные — `ap...`). Витринный список — только через `useCatalogProducts()` из `store/catalog.ts`. В `data/products.ts` остались чистые хелперы (`getProduct`, `getProductById` и т.д.), но они видят только seed и в витрине почти не используются.
-- Все store-файлы помечены `"use client"` и используют `persist`. Ключи localStorage: `seora-cart`, `seora-wishlist`, `seora-auth`, `seora-orders`, `seora-admin-auth`, `seora-catalog`. Чтобы «сбросить» что-то — удалить соответствующий ключ.
-- Страницы с `useSearchParams` обёрнуты в `<Suspense>` (`login`, `register`, `search`, `checkout/success`) — этого требует Next.js при сборке.
-- Клиентские страницы (`/product/[slug]`, `/sale`, `/search`) не имеют `generateMetadata` — это сознательный размен ради чтения каталога из localStorage. При переходе на БД их можно вернуть к серверному рендеру.
-- Для предотвращения рассинхрона SSR/CSR в местах, читающих localStorage, используется хук `useHydrated()`; `useCatalogProducts()` до гидрации отдаёт seed.
-- Валюта и контакты, реквизиты оплаты централизованы в `src/data/site.ts` (валюта — тенге `₸`).
-- Дерево категорий — в `src/data/categories.ts` (источник правды разделов/категорий; их пользователь не редактирует). Добавляемые товары выбирают раздел/категорию/подкатегорию из него.
-- Excel генерируется на клиенте через `xlsx` в `src/lib/excel.ts`: `exportOrderExcel(order)` и `exportWarehouseExcel(orders, label)`.
-- `npm run build` под песочницей на Windows может не записать `.next` — запускать вне песочницы (с полными правами).
+1. **Supabase:** создан проект, применена схема (`supabase/schema.sql`), RPC-авторизация, Storage buckets, RLS.
+2. **Миграция кода:** `store/catalog`, `store/auth`, `store/orders`, `store/adminAuth` переведены с localStorage на Supabase + серверные API.
+3. **Фото и скриншоты:** загрузка в Supabase Storage (вместо data URL в localStorage).
+4. **Seed:** 25 товаров залиты в `products`.
+5. **Vercel:** production-деплой, env-переменные, основной домен `seora-shop.vercel.app`.
+6. **GitHub:** репозиторий `nurzhanch165-ux/seora`, первый коммит, подключение к Vercel для авто-деплоя.
+7. **Установлены:** Git, GitHub CLI, `@supabase/supabase-js`, `server-only`.
 
 ---
 
-## 10. Подсказка для нового чата
+## 12. Известные ограничения и следующие шаги
 
-Хорошая первая задача в новом чате: «Подключить Supabase (таблицы products/categories/customers/orders/order_items + Storage для фото товаров и скриншотов оплаты), перенести данные из `store/catalog.ts`, `store/auth.ts`, `store/orders.ts` и seed `data/products.ts` в БД, затем задеплоить на Vercel». После этого сайт станет общим для всех устройств и доступным по публичной ссылке.
+### Ограничения
+
+1. Авторизация клиентов — **кастомная** (логин/пароль в таблице, не Supabase Auth). Для enterprise-безопасности можно мигрировать на Supabase Auth.
+2. «Забыли пароль» — сверка логина + телефона, без SMS/email.
+3. Категории — по-прежнему в `data/categories.ts` (не в БД, не редактируются админом).
+4. Корзина и избранное — только в браузере (localStorage).
+5. Next.js 14.2.5 — есть security advisory; стоит обновить при удобном случае.
+6. Свой домен (`seora.kz` и т.д.) — не подключён; можно добавить в Vercel → Settings → Domains.
+
+### План развития (приоритеты)
+
+1. Подключить **свой домен** (если есть).
+2. **Ротация** `service_role` ключа Supabase (если утекал).
+3. Серверные роли (админ / менеджер / склад).
+4. Онлайн-оплата.
+5. Уведомления (email, Telegram, WhatsApp).
+6. Мультиязычность (`next-intl`).
+7. Оптовые клиенты, минимальная сумма заказа.
+8. SSR/metadata для страниц товаров (сейчас клиентские для чтения из Supabase).
+
+---
+
+## 13. Важные технические детали
+
+- Товары: id `p01`, `h01`; добавленные админом — `ap...`. Витрина — `useCatalogProducts()` из `store/catalog.ts`.
+- localStorage ключи: `seora-cart`, `seora-wishlist`, `seora-auth` (только `current`, без пароля). Старые ключи `seora-orders`, `seora-catalog`, `seora-admin-auth` больше не используются.
+- Страницы с `useSearchParams` обёрнуты в `<Suspense>`.
+- `scripts/` исключён из `tsconfig.json` (не ломает `next build`).
+- `npm run build` на Windows в песочнице Cursor может не писать `.next` — запускать с полными правами.
+- Supabase MCP в Cursor: авторизация через OAuth; организация `seora`, project ref `tmdakiocltbfjawkdwdw`.
+
+---
+
+## 14. Подсказка для нового чата
+
+Проект **уже на Supabase + Vercel + GitHub**. Хорошие следующие задачи:
+
+- «Подключить домен seora.kz к Vercel»
+- «Добавить уведомления в Telegram при новом заказе»
+- «Обновить Next.js до последней безопасной версии»
+- «Перенести категории в Supabase и дать админу их редактировать»
+- «Добавить мультиязычность (рус/каз/кор)»
+
+При работе с Supabase — использовать **Supabase MCP** (уже авторизован) и skill `supabase/SKILL.md`.

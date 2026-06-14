@@ -6,7 +6,9 @@
 --   orders/order_items  — прямого доступа у anon нет; всё через серверные роуты с service_role
 -- Пароли клиентов хранятся как bcrypt-хеш (pgcrypto) и НИКОГДА не отдаются клиенту.
 
-create extension if not exists pgcrypto;
+-- В Supabase расширения ставятся в схему extensions; функции ниже включают её в search_path.
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 -- =========================================================================
 -- ТАБЛИЦЫ
@@ -166,7 +168,7 @@ create or replace function public.register_customer(
   p_agree_data boolean,
   p_agree_marketing boolean
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_login text := trim(coalesce(p_login, ''));
   v_phone text := regexp_replace(coalesce(p_phone, ''), '\s', '', 'g');
@@ -208,7 +210,7 @@ create or replace function public.authenticate_customer(
   p_login text,
   p_password text
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_login text := trim(coalesce(p_login, ''));
   v_phone text := regexp_replace(coalesce(p_login, ''), '\s', '', 'g');
@@ -236,7 +238,7 @@ create or replace function public.change_password(
   p_current text,
   p_new text
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_row public.customers;
 begin
@@ -261,7 +263,7 @@ create or replace function public.reset_password(
   p_phone text,
   p_new text
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_phone text := regexp_replace(coalesce(p_phone, ''), '\s', '', 'g');
   v_row public.customers;
@@ -295,7 +297,7 @@ create or replace function public.update_customer_profile(
   p_telegram text,
   p_email text
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_login text := trim(coalesce(p_login, ''));
   v_phone text := regexp_replace(coalesce(p_phone, ''), '\s', '', 'g');
