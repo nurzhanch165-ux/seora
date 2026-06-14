@@ -1,4 +1,4 @@
--- SEORA — схема базы данных Supabase
+-- SonyShopKorea — схема базы данных Supabase
 -- Применяется к новому проекту Supabase (через MCP execute_sql или SQL Editor).
 -- Архитектура доступа:
 --   products            — публичное чтение (anon); запись только через service_role (серверные роуты админки)

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 // Серверная авторизация администратора через httpOnly-cookie.
 // Значение cookie — sha256(login:password), которое нельзя подделать без знания пароля.
 
-export const ADMIN_COOKIE = "seora_admin";
+export const ADMIN_COOKIE = "sonyshopkorea_admin";
 
 function adminLogin(): string {
   return process.env.ADMIN_LOGIN ?? "admin";

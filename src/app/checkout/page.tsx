@@ -24,7 +24,7 @@ function genNumber() {
   const d = new Date();
   const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
   const rnd = Math.floor(100 + Math.random() * 900);
-  return `SEORA-${ymd}-${rnd}`;
+  return `SSK-${ymd}-${rnd}`;
 }
 
 export default function CheckoutPage() {

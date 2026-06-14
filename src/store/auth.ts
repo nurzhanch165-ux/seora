@@ -140,6 +140,6 @@ export const useAuth = create<AuthState>()(
         return res.ok ? { ok: true } : { ok: false, error: res.error };
       },
     }),
-    { name: "seora-auth" }
+    { name: "sonyshopkorea-auth" }
   )
 );

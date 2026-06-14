@@ -45,6 +45,6 @@ export const useCart = create<CartState>()(
       clear: () => set({ lines: [] }),
       count: () => get().lines.reduce((sum, l) => sum + l.qty, 0),
     }),
-    { name: "seora-cart" }
+    { name: "sonyshopkorea-cart" }
   )
 );

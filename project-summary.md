@@ -1,8 +1,8 @@
-# SEORA — сводка проекта (handoff)
+# SonyShopKorea — сводка проекта (handoff)
 
 > Этот файл — краткое и полное описание проекта для продолжения работы в новом чате.
 > Вставьте его содержимое в начало нового диалога, чтобы ассистент сразу понял контекст.
-> **Последнее обновление:** июнь 2026 — подключён Supabase, задеплоено на Vercel, код на GitHub.
+> **Последнее обновление:** июнь 2026 — Supabase + Vercel + GitHub; вторая сессия: фикс регистрации, адрес в Excel, устранение «вылетов» из ЛК, мобильная оптимизация, доступ админа к ЛК/оформлению.
 
 ---
 
@@ -44,8 +44,8 @@
 | Фото товаров | Supabase Storage `product-images` (публичный) |
 | Скриншоты оплаты | Supabase Storage `payment-screenshots` (приватный, signed URL) |
 | Корзина, избранное | `localStorage` (как и раньше) |
-| Текущий клиент в ЛК | `localStorage` (`seora-auth`, без пароля) |
-| Сессия админа | httpOnly-cookie `seora_admin` (сервер) |
+| Текущий клиент в ЛК | `localStorage` (`sonyshopkorea-auth`, без пароля) |
+| Сессия админа | httpOnly-cookie `sonyshopkorea_admin` (сервер) |
 
 > **ВАЖНО:** каталог, клиенты и заказы теперь **общие для всех устройств** через Supabase. Админ видит заказы всех клиентов; правки каталога в админке видны всем.
 
@@ -55,21 +55,22 @@
 
 ### Сайт (Vercel)
 
-- **Основная ссылка:** https://seora-shop.vercel.app
-- Также работает: https://seora-nine.vercel.app (старый alias Vercel)
-- `seora.vercel.app` — **занят** другим проектом на Vercel, использовать нельзя
+- **Целевая ссылка (после переименования проекта):** https://sonyshopkorea.vercel.app
+- **Текущая ссылка (до переименования):** https://seora-shop.vercel.app, также https://seora-nine.vercel.app
 - Панель: https://vercel.com/nurzhan1/seora
-- Проект Vercel: `nurzhan1/seora`
+- Проект Vercel: `nurzhan1/seora` → переименовать в `sonyshopkorea` (Vercel → Project → Settings → General → Project Name). Vercel URL формируется из имени проекта; `sonyshopkorea.vercel.app` должен быть свободен.
+
+> **TODO (ручной шаг):** переименовать проект Vercel в `sonyshopkorea`, чтобы ссылка стала `sonyshopkorea.vercel.app`. Это не меняется из кода.
 
 ### GitHub
 
-- **Репозиторий:** https://github.com/nurzhanch165-ux/seora
+- **Репозиторий:** https://github.com/nurzhanch165-ux/seora → переименовать в `sonyshopkorea` (GitHub → Settings → Repository name). После переименования обновить `git remote set-url origin ...`.
 - Ветка: `main`
 - Git подключён к Vercel → **авто-деплой при `git push`**
 
 ### Supabase
 
-- **Организация:** `seora`
+- **Организация:** `seora` (метка организации; на сайт не влияет, можно переименовать в Dashboard по желанию)
 - **Проект:** `nurzhanch165-ux's Project`
 - **Project ref / id:** `tmdakiocltbfjawkdwdw`
 - **Регион:** `ap-northeast-2` (Сеул)
@@ -200,13 +201,13 @@ scripts/
 - Вход по **логину** (или телефону для старых аккаунтов) + пароль.
 - Пароли хранятся как **bcrypt-хеш** в `customers.password_hash`.
 - Браузер вызывает RPC через `getSupabase().rpc(...)` — хеш никогда не уходит на клиент.
-- После входа в `store/auth.ts` хранится `current: Account` (без поля password) в localStorage (`seora-auth`).
+- После входа в `store/auth.ts` хранится `current: Account` (без поля password) в localStorage (`sonyshopkorea-auth`).
 - Регистрация, профиль, смена/сброс пароля — всё через RPC (см. `supabase/schema.sql`).
 
 ### Администратор
 
 - Логин/пароль проверяются **на сервере** (`src/lib/adminAuth.server.ts`).
-- Успешный вход → httpOnly-cookie `seora_admin` (sha256 от `ADMIN_LOGIN:ADMIN_PASSWORD`).
+- Успешный вход → httpOnly-cookie `sonyshopkorea_admin` (sha256 от `ADMIN_LOGIN:ADMIN_PASSWORD`).
 - `store/adminAuth.ts` — `check()` / `login()` / `logout()` через `/api/admin/*`.
 - Все роуты админки и API защищены `isAdminRequest()`.
 
@@ -289,6 +290,46 @@ git push
 
 ---
 
+## 11-bis. Что сделано во второй сессии (июнь 2026)
+
+Все правки задеплоены (`git push` → Vercel). Подробности по файлам:
+
+1. **Фикс регистрации (`gen_salt does not exist`).**
+   - Причина: расширение `pgcrypto` установлено в схему `extensions`, а RPC-функции имели `search_path = public` и не находили `gen_salt`/`crypt`.
+   - В Supabase обновлён `search_path` всех RPC на `public, extensions`; то же зафиксировано в `supabase/schema.sql` (`create extension ... with schema extensions` + `set search_path = public, extensions`).
+   - `src/store/auth.ts`: функция `rpcError` теперь разбирает `PostgrestError` (`message/details/hint`) вместо общей «Ошибка соединения».
+
+2. **Адрес доставки в Excel (`src/lib/excel.ts`).**
+   - `exportOrderExcel`: добавлен блок «ДОСТАВКА» (получатель, телефон, страна, город, адрес, индекс, способ).
+   - `exportWarehouseExcel`: добавлены колонки получателя/адреса/способа доставки; правка объединения шапки; фолбэк комментария на `delivery.comment`.
+
+3. **Устранение «постоянных вылетов» из аккаунта.**
+   - Причина: страницы `/login` и `/register` показывали форму уже залогиненному пользователю (иллюзия выхода при «назад»).
+   - `src/app/login/page.tsx` и `src/app/register/page.tsx`: при `hydrated && current` — `router.replace(next)` в `/account`.
+
+4. **Доступ администратора к ЛК и оформлению заказа.**
+   - Причина: `CheckoutPage` и `AccountShell` пускали только клиента (`useAuth.current`), а админ авторизован по cookie (`useAdminAuth`).
+   - `src/app/checkout/page.tsx`: гейт пропускает, если `account || adminLoggedIn`; ждёт `adminReady`.
+   - `src/components/AccountShell.tsx`: то же; в сайдбаре при админ-входе показывает «Администратор / Служебный вход».
+   - Со страницы `/login` убрана подпись про вход администратора.
+
+5. **Мобильная оптимизация (лаги + пустое меню «три полоски»).**
+   - Причина лагов и пустого меню: `backdrop-filter` на липкой шапке создавал containing block, из-за чего `position: fixed` оверлеи (мобильное меню, поиск) схлопывались; плюс тормоза при скролле.
+   - `src/components/Header.tsx`: убран `backdrop-blur-md` у шапки (`bg-paper`); оверлеи поиска и мобильное меню вынесены **из** `<header>` в фрагмент; поправлены z-index.
+   - `src/components/ProductVisual.tsx`: `loading="lazy"` + `decoding="async"` на `<img>`.
+   - `src/components/ProductCard.tsx`: убран `backdrop-blur` с кнопок; кнопка «Добавить в корзину» сделана только для десктопа (`lg:block`).
+
+6. **Фикс мобильной вёрстки во вкладке «Товары» (админка) и шапки.**
+   - Причина: сетка списка товаров `grid ... sm:grid-cols-2` без базового `grid-cols-1` — единственная колонка тянулась по содержимому, а `truncate` в названии раздувал карточку шире экрана (горизонтальный скролл на ≤360px).
+   - `src/app/admin/page.tsx`: добавлены `grid-cols-1` и `min-w-0` карточке.
+   - `src/components/Header.tsx`: на узких экранах (≤360px) правый кластер иконок вылезал — уменьшены отступы иконок (`px-2 sm:px-2.5`), гэпы и трекинг логотипа (`tracking-[0.18em] sm:tracking-[0.28em]`).
+
+7. **Git-деплой.** Настроен `user.name/email`; на Windows песочница Cursor (`workspace_readwrite`) блокирует git/`npm run build` — выполнять с полными правами (вне песочницы).
+
+8. **Для клиента** составлен список функций сайта по пунктам (витрина, каталог, карточка товара, корзина, оформление, ЛК, админка).
+
+---
+
 ## 12. Известные ограничения и следующие шаги
 
 ### Ограничения
@@ -316,11 +357,14 @@ git push
 ## 13. Важные технические детали
 
 - Товары: id `p01`, `h01`; добавленные админом — `ap...`. Витрина — `useCatalogProducts()` из `store/catalog.ts`.
-- localStorage ключи: `seora-cart`, `seora-wishlist`, `seora-auth` (только `current`, без пароля). Старые ключи `seora-orders`, `seora-catalog`, `seora-admin-auth` больше не используются.
+- localStorage ключи: `sonyshopkorea-cart`, `sonyshopkorea-wishlist`, `sonyshopkorea-auth` (только `current`, без пароля). Старые ключи (`seora-*`, `seora-orders`, `seora-catalog`, `seora-admin-auth`) больше не используются — после переименования у текущих пользователей корзина/избранное/сессия обнулятся (читаются новые ключи).
 - Страницы с `useSearchParams` обёрнуты в `<Suspense>`.
 - `scripts/` исключён из `tsconfig.json` (не ломает `next build`).
 - `npm run build` на Windows в песочнице Cursor может не писать `.next` — запускать с полными правами.
 - Supabase MCP в Cursor: авторизация через OAuth; организация `seora`, project ref `tmdakiocltbfjawkdwdw`.
+- **pgcrypto / RPC:** `pgcrypto` живёт в схеме `extensions`. Все RPC, использующие `gen_salt`/`crypt`, должны иметь `set search_path = public, extensions`, иначе — `function gen_salt(unknown) does not exist`.
+- **Адаптивные сетки:** если у `grid ... sm:grid-cols-N` внутри есть `truncate`/`whitespace-nowrap`, обязательно задавать базовый `grid-cols-1` (иначе единственная авто-колонка тянется по содержимому и ломает мобильную ширину). Витринная сетка (`ProductGrid`) уже на `grid-cols-2`.
+- **`backdrop-filter` = containing block:** не вешать `backdrop-blur` на липкую шапку, иначе `position: fixed` оверлеи позиционируются относительно шапки; оверлеи рендерить вне `<header>`.
 
 ---
 
