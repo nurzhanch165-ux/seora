@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/store/auth";
+import { useHydrated } from "@/lib/useHydrated";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import * as I from "@/components/icons";
 
@@ -12,6 +13,12 @@ function RegisterInner() {
   const params = useSearchParams();
   const next = params.get("next") || "/account";
   const register = useAuth((s) => s.register);
+  const current = useAuth((s) => s.current);
+  const hydrated = useHydrated();
+
+  useEffect(() => {
+    if (hydrated && current) router.replace(next);
+  }, [hydrated, current, next, router]);
 
   const [form, setForm] = useState({
     login: "", lastName: "", firstName: "", middleName: "", country: "", city: "",
@@ -60,6 +67,10 @@ function RegisterInner() {
       return;
     }
     router.push(next);
+  }
+
+  if (hydrated && current) {
+    return <div className="container-site py-20 text-center text-muted">Вы уже вошли. Открываем кабинет…</div>;
   }
 
   return (

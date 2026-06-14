@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/store/auth";
 import { useAdminAuth } from "@/store/adminAuth";
+import { useHydrated } from "@/lib/useHydrated";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 function LoginInner() {
@@ -12,12 +13,24 @@ function LoginInner() {
   const params = useSearchParams();
   const next = params.get("next") || "/account";
   const login = useAuth((s) => s.login);
+  const current = useAuth((s) => s.current);
   const adminLogin = useAdminAuth((s) => s.login);
+  const hydrated = useHydrated();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Если клиент уже вошёл — не показываем форму, сразу отправляем в кабинет
+  // (иначе при нажатии «Назад» кажется, будто разлогинило).
+  useEffect(() => {
+    if (hydrated && current) router.replace(next);
+  }, [hydrated, current, next, router]);
+
+  if (hydrated && current) {
+    return <div className="container-site py-20 text-center text-muted">Вы уже вошли. Открываем кабинет…</div>;
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
