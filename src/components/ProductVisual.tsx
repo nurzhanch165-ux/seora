@@ -34,7 +34,7 @@ export function ProductVisual({
     return (
       <div className={`relative overflow-hidden bg-paper ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt={brand ?? "Товар"} className="h-full w-full object-cover" />
+        <img src={image} alt={brand ?? "Товар"} loading="lazy" decoding="async" className="h-full w-full object-cover" />
       </div>
     );
   }

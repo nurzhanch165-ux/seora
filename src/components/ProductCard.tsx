@@ -54,7 +54,7 @@ export function ProductCard({ product }: { product: Product }) {
         <button
           onClick={() => toggle(product.id)}
           aria-label="В избранное"
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-ink shadow-soft backdrop-blur transition-colors hover:text-accent"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-ink shadow-soft transition-colors hover:text-accent"
         >
           {liked ? <I.HeartFilled size={18} className="text-accent" /> : <I.Heart size={18} />}
         </button>
@@ -62,7 +62,7 @@ export function ProductCard({ product }: { product: Product }) {
         {/* quick add */}
         <button
           onClick={() => add(product.id, product.slug)}
-          className="absolute inset-x-3 bottom-3 translate-y-3 rounded-full bg-ink/95 py-2.5 text-xs font-medium text-paper opacity-0 backdrop-blur transition-all duration-300 ease-smooth hover:bg-accent group-hover:translate-y-0 group-hover:opacity-100"
+          className="absolute inset-x-3 bottom-3 hidden translate-y-3 rounded-full bg-ink py-2.5 text-xs font-medium text-paper opacity-0 transition-all duration-300 ease-smooth hover:bg-accent group-hover:translate-y-0 group-hover:opacity-100 lg:block"
         >
           Добавить в корзину
         </button>

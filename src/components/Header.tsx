@@ -58,7 +58,8 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
+    <>
+    <header className="sticky top-0 z-40 border-b border-line bg-paper">
       {/* Announcement */}
       <div className="hidden border-b border-line/70 bg-ink text-paper md:block">
         <div className="container-site flex h-9 items-center justify-between text-[12px]">
@@ -179,34 +180,37 @@ export function Header() {
         </div>
       )}
 
-      {/* Search overlay */}
-      {searchOpen && (
-        <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-sm animate-fadeIn" onClick={() => setSearchOpen(false)}>
-          <div className="bg-surface px-5 py-6 shadow-lift sm:px-8" onClick={(e) => e.stopPropagation()}>
-            <div className="container-site">
-              <form onSubmit={submitSearch} className="flex items-center gap-3">
-                <I.Search className="text-muted" />
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Поиск товаров: коллаген, тонер, омега-3…"
-                  className="w-full bg-transparent py-2 text-lg text-ink outline-none placeholder:text-faint"
-                />
-                <button type="button" className="btn-ghost px-2" onClick={() => setSearchOpen(false)} aria-label="Закрыть">
-                  <I.Close />
-                </button>
-              </form>
-            </div>
+      {/* Mega menu end */}
+    </header>
+
+    {/* Search overlay (вне header, чтобы fixed считался от экрана) */}
+    {searchOpen && (
+      <div className="fixed inset-0 z-[60] bg-ink/30 animate-fadeIn" onClick={() => setSearchOpen(false)}>
+        <div className="bg-surface px-5 py-6 shadow-lift sm:px-8" onClick={(e) => e.stopPropagation()}>
+          <div className="container-site">
+            <form onSubmit={submitSearch} className="flex items-center gap-3">
+              <I.Search className="text-muted" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Поиск товаров: коллаген, тонер, омега-3…"
+                className="w-full bg-transparent py-2 text-lg text-ink outline-none placeholder:text-faint"
+              />
+              <button type="button" className="btn-ghost px-2" onClick={() => setSearchOpen(false)} aria-label="Закрыть">
+                <I.Close />
+              </button>
+            </form>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <MobileMenu onClose={() => setMobileOpen(false)} />
-      )}
-    </header>
+    {/* Mobile drawer (вне header, чтобы fixed считался от экрана) */}
+    {mobileOpen && (
+      <MobileMenu onClose={() => setMobileOpen(false)} />
+    )}
+    </>
   );
 }
 
