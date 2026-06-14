@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
+import { useAdminAuth } from "@/store/adminAuth";
 import { useOrders } from "@/store/orders";
 import { useCatalogProducts } from "@/store/catalog";
 import { brandName } from "@/data/brands";
@@ -30,6 +31,9 @@ export default function CheckoutPage() {
   const hydrated = useHydrated();
   const router = useRouter();
   const account = useAuth((s) => s.current);
+  const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
+  const adminReady = useAdminAuth((s) => s.ready);
+  const adminCheck = useAdminAuth((s) => s.check);
   const lines = useCart((s) => s.lines);
   const clear = useCart((s) => s.clear);
   const createOrder = useOrders((s) => s.createOrder);
@@ -56,6 +60,10 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    adminCheck();
+  }, [adminCheck]);
+
+  useEffect(() => {
     if (account) {
       setCustomer({
         lastName: account.lastName, firstName: account.firstName, middleName: account.middleName,
@@ -71,7 +79,7 @@ export default function CheckoutPage() {
     }
   }, [account]);
 
-  if (!hydrated) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
+  if (!hydrated || !adminReady) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
 
   if (items.length === 0) {
     return (
@@ -85,7 +93,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!account) {
+  if (!account && !adminLoggedIn) {
     return (
       <div className="container-site py-8">
         <Breadcrumbs items={[{ label: "Оформление" }]} />

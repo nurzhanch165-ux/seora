@@ -61,7 +61,7 @@ function LoginInner() {
       <div className="mx-auto mt-6 max-w-md">
         <h1 className="h-display text-3xl md:text-4xl">Вход</h1>
         <p className="mt-2 text-muted">
-          Введите логин и пароль. Администратор входит здесь же по своему логину.
+          Введите логин и пароль.
         </p>
 
         <form onSubmit={submit} className="card mt-8 space-y-4 p-6 md:p-8">
