@@ -61,7 +61,7 @@ export function Header() {
   }
 
   const navPill =
-    "inline-flex items-center gap-1 rounded-full border border-transparent px-3.5 py-2 text-[13px] font-medium transition-colors xl:px-4";
+    "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-3 py-2 text-[13px] font-medium transition-colors lg:px-3.5 xl:px-4";
 
   const navLink = (href: string, label: string, accent = false) => {
     const active = pathname === href || pathname.startsWith(href + "/");
@@ -86,25 +86,25 @@ export function Header() {
       <div className="relative sticky top-0 z-40">
       <header className="relative border-b border-line bg-pearl shadow-soft">
         <div className="hidden border-b border-line/60 bg-ink md:block">
-          <div className="container-site flex h-9 items-center justify-between text-[11px] text-pearl/80">
-            <span>{tr("topbar.tagline")}</span>
-            <div className="flex items-center gap-4">
+          <div className="container-site flex h-9 items-center gap-3 text-[11px] text-pearl/80">
+            <span className="min-w-0 flex-1 whitespace-nowrap">{tr("topbar.tagline")}</span>
+            <div className="flex shrink-0 items-center gap-3 lg:gap-4">
               <LocaleCurrencyBar compact light />
-              <a href={site.contacts.whatsappLink} className="link-underline hover:text-white">
+              <a href={site.contacts.whatsappLink} className="link-underline hidden whitespace-nowrap hover:text-white xl:inline">
                 WhatsApp
               </a>
-              <a href={site.contacts.telegramLink} className="link-underline hover:text-white">
+              <a href={site.contacts.telegramLink} className="link-underline hidden whitespace-nowrap hover:text-white xl:inline">
                 Telegram
               </a>
-              <Link href="/delivery" className="link-underline hover:text-white">
+              <Link href="/delivery" className="link-underline whitespace-nowrap hover:text-white">
                 {tr("nav.delivery")}
               </Link>
             </div>
           </div>
         </div>
 
-        <div className="container-site flex h-14 min-w-0 items-center justify-between gap-2 sm:h-16 md:h-[68px]">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="container-site flex h-14 min-w-0 items-center gap-2 sm:h-16 md:h-[68px] lg:gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <button
               className="icon-btn -ml-1 shrink-0 lg:hidden"
               onClick={() => setMobileOpen(true)}
@@ -112,17 +112,17 @@ export function Header() {
             >
               <I.Menu />
             </button>
-            <Link href="/" className="group flex min-w-0 shrink items-center gap-2.5 select-none">
+            <Link href="/" className="group flex shrink-0 items-center gap-2.5 select-none">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold tracking-tight text-pearl sm:h-9 sm:w-9">
                 SK
               </span>
-              <span className="hidden truncate font-display text-sm font-semibold tracking-tight text-ink sm:block md:text-base">
+              <span className="hidden whitespace-nowrap font-display text-sm font-semibold tracking-tight text-ink sm:block md:text-base">
                 {site.name}
               </span>
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-0.5 lg:flex xl:gap-1">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto lg:flex xl:gap-1 [&::-webkit-scrollbar]:hidden">
             {sections.map((s) => (
               <div key={s.slug} onMouseEnter={() => openMega(s.slug)} onMouseLeave={scheduleClose}>
                 <Link
