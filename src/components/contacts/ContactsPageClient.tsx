@@ -53,7 +53,7 @@ export function ContactsPageClient() {
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent"><I.Pin size={22} /></span>
           <div>
             <p className="text-xs uppercase tracking-wider text-faint">{tr("contacts.warehouse")}</p>
-            <p className="text-sm font-medium text-ink">{site.contacts.address}</p>
+            <p className="text-sm font-medium text-ink">{tr("contacts.address")}</p>
           </div>
         </div>
       </div>

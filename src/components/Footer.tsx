@@ -94,7 +94,7 @@ export function Footer() {
             </li>
             <li className="flex items-start gap-2">
               <I.Pin size={16} className="mt-0.5 text-accent" />
-              {site.contacts.address}
+              {tr("contacts.address")}
             </li>
           </ul>
         </div>
