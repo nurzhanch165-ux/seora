@@ -61,7 +61,9 @@ export function Header() {
   }
 
   const navPill =
-    "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-3 py-2 text-[13px] font-medium transition-colors lg:px-3.5 xl:px-4";
+    "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-2.5 py-2 text-xs font-medium transition-colors lg:px-3 lg:text-[13px] xl:px-4";
+
+  const secondarySectionSlugs = new Set(["home", "clothes", "shoes"]);
 
   const navLink = (href: string, label: string, accent = false) => {
     const active = pathname === href || pathname.startsWith(href + "/");
@@ -116,15 +118,20 @@ export function Header() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold tracking-tight text-pearl sm:h-9 sm:w-9">
                 SK
               </span>
-              <span className="hidden whitespace-nowrap font-display text-sm font-semibold tracking-tight text-ink sm:block md:text-base">
+              <span className="hidden whitespace-nowrap font-display text-sm font-semibold tracking-tight text-ink sm:block lg:text-[13px] xl:text-base">
                 {site.name}
               </span>
             </Link>
           </div>
 
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto lg:flex xl:gap-1 [&::-webkit-scrollbar]:hidden">
+          <nav className="hidden min-w-0 flex-1 items-center justify-start gap-0.5 overflow-x-auto lg:flex xl:gap-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {sections.map((s) => (
-              <div key={s.slug} onMouseEnter={() => openMega(s.slug)} onMouseLeave={scheduleClose}>
+              <div
+                key={s.slug}
+                className={secondarySectionSlugs.has(s.slug) ? "hidden shrink-0 xl:block" : "shrink-0"}
+                onMouseEnter={() => openMega(s.slug)}
+                onMouseLeave={scheduleClose}
+              >
                 <Link
                   href={`/c/${s.slug}`}
                   className={`${navPill} ${
@@ -144,7 +151,7 @@ export function Header() {
             {navLink("/streams", tr("nav.streams"), true)}
             {navLink("/sale", tr("nav.sale"), true)}
             {navLink("/brands", tr("nav.brands"))}
-            {navLink("/contacts", tr("nav.contacts"))}
+            <span className="hidden shrink-0 xl:contents">{navLink("/contacts", tr("nav.contacts"))}</span>
           </nav>
 
           <div className="flex shrink-0 items-center gap-0">
