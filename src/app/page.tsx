@@ -1,90 +1,107 @@
 import Link from "next/link";
+import Image from "next/image";
 import { sections } from "@/data/categories";
-import { brands } from "@/data/brands";
-import { products } from "@/data/products";
 import { site } from "@/data/site";
 import { Glyph } from "@/components/Glyph";
-import { ProductVisual } from "@/components/ProductVisual";
 import { FeaturedGrid } from "@/components/FeaturedGrid";
 import { SectionHeading } from "@/components/SectionHeading";
+import { Reveal } from "@/components/Reveal";
 import * as I from "@/components/icons";
+
+const HOME_CATEGORIES = [
+  { slug: "cosmetics", name: "Косметика", icon: "Sparkle" as const, href: "/c/cosmetics" },
+  { slug: "vitamins", name: "Витамины и БАДы", icon: "Pill" as const, href: "/c/health" },
+  { slug: "health", name: "Товары для здоровья", icon: "HealthHeart" as const, href: "/c/health" },
+  { slug: "home", name: "Товары для дома", icon: "Jar" as const, href: "/c/cosmetics" },
+  { slug: "clothes", name: "Одежда", icon: "Woman" as const, href: "/c/cosmetics" },
+  { slug: "shoes", name: "Обувь", icon: "Man" as const, href: "/c/cosmetics" },
+];
+
+const WHY_US = [
+  { icon: <I.Truck size={22} />, title: "Напрямую из Южной Кореи", text: "Закупка и отправка со склада в Сеуле." },
+  { icon: <I.Whatsapp size={22} />, title: "Поддержка на русском", text: "Поможем с выбором и оформлением." },
+  { icon: <I.Shield size={22} />, title: "Международная доставка", text: "Казахстан, Европа, Корея и другие страны." },
+  { icon: <I.Box size={22} />, title: "Сборный заказ", text: "Разные категории в одной корзине." },
+  { icon: <I.Sparkle size={22} />, title: "Свежие новинки", text: "Регулярно пополняем каталог." },
+  { icon: <I.StarFilled size={22} />, title: "Редкие позиции", text: "То, чего нет в обычных магазинах." },
+];
+
+const HOW_TO_ORDER = [
+  "Зарегистрируйтесь на сайте",
+  "Выберите товары",
+  "Добавьте в корзину",
+  "Укажите данные получателя",
+  "Выберите доставку",
+  "Оплатите заказ",
+  "Сборка на складе",
+  "Отправка и трекинг",
+];
+
+const BRAND_STRIP = ["COSRX", "Laneige", "Innisfree", "Sulwhasoo", "Dr.Jart+", "Missha", "Etude", "Nature Republic"];
 
 export default function HomePage() {
   return (
     <>
       <Hero />
-      <Sections />
-      <CategoryStrip />
+      <BrandMarquee />
+      <AboutBlock />
+      <CategoriesBlock />
+      <WhyUsBlock />
+      <HowToOrderBlock />
 
-      <section className="container-site mt-24">
-        <SectionHeading eyebrow="Выбор покупателей" title="Хиты продаж" href="/sale" hrefLabel="Все популярные" />
+      <section className="container-site mt-20 sm:mt-28">
+        <Reveal>
+          <SectionHeading title="Хиты продаж" href="/sale" hrefLabel="Все популярные" />
+        </Reveal>
         <FeaturedGrid kind="hit" />
       </section>
 
-      <Advantages />
+      <StreamsPromo />
 
-      <section className="container-site mt-24">
-        <SectionHeading eyebrow="Только что приехали" title="Новинки каталога" href="/c/cosmetics" />
+      <section className="container-site mt-20 sm:mt-28">
+        <Reveal>
+          <SectionHeading title="Новинки каталога" href="/c/cosmetics" />
+        </Reveal>
         <FeaturedGrid kind="new" />
       </section>
 
       <SaleBanner />
-
-      <section className="container-site mt-24">
-        <SectionHeading eyebrow="Выгодно" title="Товары по акции" href="/sale" />
-        <FeaturedGrid kind="sale" />
-      </section>
-
-      <BrandsRow />
       <RegisterCta />
     </>
   );
 }
 
 function Hero() {
-  const tiles = products.slice(0, 3);
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sand/70 via-paper to-paper" />
-      <div className="container-site grid items-center gap-12 py-16 md:py-24 lg:grid-cols-2">
-        <div className="animate-fadeUp">
-          <p className="eyebrow mb-4">Прямо из Сеула · по всему миру</p>
-          <h1 className="h-display text-4xl sm:text-5xl lg:text-[58px]">
-            Корейская косметика <br />и здоровье — <span className="text-accent">с заботой</span>
+    <section className="relative min-h-[100dvh] overflow-hidden">
+      <Image
+        src="/images/hero-korea.png"
+        alt="Корейская косметика SonyShopKorea"
+        fill
+        priority
+        className="object-cover object-[center_30%]"
+        sizes="100vw"
+      />
+      <div className="absolute inset-0 bg-hero-overlay" />
+      <div className="container-site relative flex min-h-[100dvh] flex-col justify-end pb-12 pt-24 sm:pb-16 sm:pt-28 lg:pb-20">
+        <div className="max-w-xl lg:max-w-2xl">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest2 text-accent">
+            Прямо из Сеула
+          </p>
+          <h1 className="h-display text-4xl text-pearl sm:text-5xl lg:text-6xl">
+            Корейская красота с доставкой по миру
           </h1>
-          <p className="mt-6 max-w-md text-base leading-relaxed text-muted">
-            {site.description} Выбирайте оригинальные средства, формируйте заказ и оплачивайте удобным способом.
+          <p className="mt-5 max-w-md text-base leading-relaxed text-pearl/75">
+            Косметика, витамины и товары для здоровья. Оригинальная продукция из Южной Кореи.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/c/cosmetics" className="btn-primary">
-              Перейти в каталог
+            <Link href="/c/cosmetics" className="btn-accent">
+              В каталог
               <I.ArrowRight size={18} />
             </Link>
-            <Link href="/register" className="btn-outline">Регистрация</Link>
-          </div>
-          <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-muted">
-            <Trust icon={<I.Shield size={18} />} text="Только оригинал" />
-            <Trust icon={<I.Truck size={18} />} text="Доставка по миру" />
-            <Trust icon={<I.Sparkle size={18} />} text="Прямые поставки" />
-          </div>
-        </div>
-
-        <div className="relative hidden lg:block">
-          <div className="grid grid-cols-2 gap-4">
-            <ProductVisual tone={tiles[0].tone} glyph={tiles[0].glyph} className="aspect-[3/4] rounded-xl2 shadow-soft" glyphSize={64} />
-            <div className="mt-10 grid gap-4">
-              <ProductVisual tone={tiles[1].tone} glyph={tiles[1].glyph} className="aspect-square rounded-xl2 shadow-soft" glyphSize={52} />
-              <ProductVisual tone={tiles[2].tone} glyph={tiles[2].glyph} className="aspect-[4/5] rounded-xl2 shadow-soft" glyphSize={52} />
-            </div>
-          </div>
-          <div className="absolute -bottom-4 left-6 flex items-center gap-3 rounded-2xl border border-line bg-surface/95 px-5 py-3 shadow-lift backdrop-blur">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
-              <I.StarFilled size={18} />
-            </span>
-            <div>
-              <p className="text-sm font-medium text-ink">4.9 из 5</p>
-              <p className="text-xs text-muted">более 2000 отзывов</p>
-            </div>
+            <Link href="/register" className="btn-light">
+              Регистрация
+            </Link>
           </div>
         </div>
       </div>
@@ -92,154 +109,257 @@ function Hero() {
   );
 }
 
-function Trust({ icon, text }: { icon: React.ReactNode; text: string }) {
+function BrandMarquee() {
+  const items = [...BRAND_STRIP, ...BRAND_STRIP];
   return (
-    <span className="flex items-center gap-2">
-      <span className="text-accent">{icon}</span>
-      {text}
-    </span>
+    <section className="border-y border-line bg-surface py-4" aria-hidden="true">
+      <div className="overflow-hidden">
+        <div className="flex w-max animate-marquee gap-12 px-4">
+          {items.map((brand, i) => (
+            <span
+              key={`${brand}-${i}`}
+              className="whitespace-nowrap font-display text-sm font-semibold tracking-widest2 text-ink/30"
+            >
+              {brand}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
-function Sections() {
+function AboutBlock() {
   return (
-    <section className="container-site mt-8 grid gap-5 md:grid-cols-2">
-      {sections.map((s) => (
-        <Link
-          key={s.slug}
-          href={`/c/${s.slug}`}
-          className="group relative overflow-hidden rounded-xl2 border border-line bg-surface p-8 transition-shadow hover:shadow-lift"
-        >
-          <div className="relative z-10 max-w-[60%]">
-            <p className="eyebrow mb-2">{s.tagline}</p>
-            <h3 className="h-display text-3xl">{s.name}</h3>
-            <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-ink group-hover:text-accent">
-              Открыть раздел
-              <I.ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
-            </span>
+    <section className="container-site mt-20 sm:mt-28">
+      <Reveal>
+        <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-card lg:col-span-5">
+            <Image
+              src="/images/about-health.png"
+              alt="Товары для здоровья из Кореи"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 40vw"
+            />
           </div>
-          <div className="pointer-events-none absolute -right-6 -top-6 grid grid-cols-2 gap-3 opacity-90">
-            {s.categories.slice(0, 4).map((c) => (
-              <span key={c.slug} className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft text-accent">
-                <Glyph name={c.icon} size={26} />
-              </span>
-            ))}
+          <div className="lg:col-span-7">
+            <h2 className="h-display text-3xl sm:text-4xl lg:text-[2.75rem]">SonyShopKorea</h2>
+            <p className="mt-5 max-w-[55ch] text-base leading-relaxed text-muted">
+              Магазин корейских товаров с доставкой из Южной Кореи в Казахстан, Европу и другие страны.
+              Косметика, витамины, здоровье, дом, одежда и обувь.
+            </p>
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+              {sections.map((s) => (
+                <Link
+                  key={s.slug}
+                  href={`/c/${s.slug}`}
+                  className="group border border-line bg-surface p-5 transition-all hover:border-accent/40 hover:shadow-lift"
+                >
+                  <p className="text-[10px] uppercase tracking-wider text-faint">{s.tagline}</p>
+                  <p className="mt-2 font-display text-lg font-semibold text-ink group-hover:text-accent">
+                    {s.name}
+                  </p>
+                </Link>
+              ))}
+            </div>
           </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+function CategoriesBlock() {
+  return (
+    <section className="section-muted mt-20 sm:mt-28">
+      <div className="container-site py-16 sm:py-20">
+        <Reveal>
+          <SectionHeading title="Что можно купить" />
+        </Reveal>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-4">
+          {HOME_CATEGORIES.map((c, i) => (
+            <Reveal key={c.slug} delay={i * 60}>
+              <Link
+                href={c.href}
+                className="group flex min-w-0 flex-col items-center gap-3 border border-line bg-surface p-5 text-center transition-all hover:border-accent/30 hover:shadow-soft"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent transition-transform duration-300 group-hover:scale-105">
+                  <Glyph name={c.icon} size={26} />
+                </span>
+                <span className="line-clamp-2 text-sm font-medium text-ink">{c.name}</span>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhyUsBlock() {
+  return (
+    <section className="section-dark mt-20 sm:mt-28">
+      <div className="container-site py-16 sm:py-24">
+        <Reveal>
+          <h2 className="h-display max-w-lg text-3xl text-pearl sm:text-4xl">
+            Почему покупают у нас
+          </h2>
+        </Reveal>
+        <div className="mt-12 grid gap-px overflow-hidden border border-white/10 sm:grid-cols-2 lg:grid-cols-3">
+          {WHY_US.map((it, i) => (
+            <Reveal key={it.title} delay={i * 50}>
+              <div className="bg-slate/80 p-7 sm:p-8">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-accent">
+                  {it.icon}
+                </span>
+                <h3 className="mt-5 font-display text-base font-semibold text-pearl">{it.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-pearl/60">{it.text}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HowToOrderBlock() {
+  return (
+    <section className="container-site mt-20 sm:mt-28">
+      <Reveal>
+        <SectionHeading title="Как сделать заказ" />
+      </Reveal>
+      <div className="relative">
+        <div className="absolute left-4 top-0 hidden h-full w-px bg-line lg:block" aria-hidden="true" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {HOW_TO_ORDER.map((step, i) => (
+            <Reveal key={step} delay={i * 40}>
+              <div className="relative border border-line bg-surface p-6 lg:pl-10">
+                <span className="font-display text-2xl font-bold text-accent/40">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <p className="mt-3 text-sm font-medium leading-snug text-ink">{step}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+      <Reveal className="mt-10 flex flex-wrap gap-3">
+        <Link href="/register" className="btn-primary">
+          Зарегистрироваться
         </Link>
-      ))}
+        <Link href="/delivery" className="btn-outline">
+          Узнать о доставке
+        </Link>
+      </Reveal>
     </section>
   );
 }
 
-function CategoryStrip() {
-  const cats = sections.flatMap((s) => s.categories.map((c) => ({ ...c, section: s.slug }))).slice(0, 12);
+function StreamsPromo() {
   return (
-    <section className="container-site mt-24">
-      <SectionHeading eyebrow="Категории" title="Куда заглянуть" />
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-        {cats.map((c) => (
-          <Link
-            key={`${c.section}-${c.slug}`}
-            href={`/c/${c.section}/${c.slug}`}
-            className="group flex flex-col items-center gap-3 rounded-xl2 border border-line bg-surface px-3 py-6 text-center transition-colors hover:border-accent/40"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent transition-transform group-hover:scale-110">
-              <Glyph name={c.icon} size={26} />
-            </span>
-            <span className="text-xs leading-tight text-ink">{c.name}</span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Advantages() {
-  const items = [
-    { icon: <I.Shield size={24} />, title: "Оригинальная продукция", text: "Сертификаты GMP и контроль качества на каждый товар." },
-    { icon: <I.Truck size={24} />, title: "Доставка по миру", text: "Отправки формируются дважды в неделю со склада в Корее." },
-    { icon: <I.Box size={24} />, title: "Заказ в Excel", text: "Готовый файл заказа со всеми позициями и суммой." },
-    { icon: <I.Whatsapp size={24} />, title: "Связь как удобно", text: "WhatsApp, Telegram и личный кабинет для статуса заказа." },
-  ];
-  return (
-    <section className="container-site mt-24">
-      <div className="grid gap-px overflow-hidden rounded-xl2 border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-        {items.map((it) => (
-          <div key={it.title} className="bg-surface p-7">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">{it.icon}</span>
-            <h3 className="mt-4 text-base font-medium text-ink">{it.title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">{it.text}</p>
+    <section className="container-site mt-20 sm:mt-28">
+      <Reveal>
+        <div className="relative min-h-[320px] overflow-hidden rounded-card sm:min-h-[380px]">
+          <Image
+            src="/images/streams-bg.png"
+            alt=""
+            fill
+            className="object-cover"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+          />
+          <div className="absolute inset-0 bg-ink/70" />
+          <div className="relative flex min-h-[320px] flex-col justify-end p-8 sm:min-h-[380px] sm:p-12 lg:max-w-xl">
+            <p className="text-[11px] font-semibold uppercase tracking-widest2 text-accent">Прямые эфиры</p>
+            <h2 className="mt-3 h-display text-2xl text-pearl sm:text-3xl">Раздел «Стримы»</h2>
+            <p className="mt-4 text-sm leading-relaxed text-pearl/70 sm:text-base">
+              Товары с эфиров доступны 24 часа после стрима. Следите за новинками в TikTok и Telegram.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/streams" className="btn-accent">
+                Смотреть стримы
+              </Link>
+              <a href={site.contacts.tiktokLink} target="_blank" rel="noreferrer" className="btn-light">
+                TikTok
+              </a>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
 
 function SaleBanner() {
   return (
-    <section className="container-site mt-24">
-      <div className="relative overflow-hidden rounded-xl2 bg-ink px-8 py-14 text-paper md:px-14 md:py-16">
-        <div className="relative z-10 max-w-xl">
-          <p className="eyebrow mb-3 text-accent">Сезонная акция</p>
-          <h2 className="h-display text-3xl md:text-4xl">До −30% на уход и нутрицевтики</h2>
-          <p className="mt-4 text-paper/70">
-            Подобрали лучшие средства для кожи и здоровья по специальным ценам. Количество ограничено.
-          </p>
-          <Link href="/sale" className="btn-accent mt-7">
-            Смотреть акции
-            <I.ArrowRight size={18} />
-          </Link>
+    <section className="container-site mt-20 sm:mt-28">
+      <Reveal>
+        <div className="grid overflow-hidden rounded-card border border-line bg-surface lg:grid-cols-2">
+          <div className="flex flex-col justify-center p-8 sm:p-12">
+            <h2 className="h-display text-2xl sm:text-3xl">До −30% на уход и нутрицевтики</h2>
+            <p className="mt-4 max-w-md text-muted">
+              Подобрали лучшие средства для кожи и здоровья по специальным ценам.
+            </p>
+            <Link href="/sale" className="btn-accent mt-8 w-fit">
+              Смотреть акции
+              <I.ArrowRight size={18} />
+            </Link>
+          </div>
+          <div className="relative min-h-[200px] bg-accent-soft lg:min-h-[280px]">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="font-display text-[120px] font-bold leading-none text-accent/15 sm:text-[160px]">
+                −30%
+              </span>
+            </div>
+          </div>
         </div>
-        <I.Sparkle size={260} className="pointer-events-none absolute -right-10 -top-10 text-paper/5" strokeWidth={0.5} />
-      </div>
-    </section>
-  );
-}
-
-function BrandsRow() {
-  return (
-    <section className="container-site mt-24">
-      <SectionHeading eyebrow="Бренды" title="Корейские бренды" href="/brands" />
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl2 border border-line bg-line sm:grid-cols-3 lg:grid-cols-5">
-        {brands.slice(0, 10).map((b) => (
-          <Link
-            key={b.slug}
-            href={`/brands/${b.slug}`}
-            className="flex h-24 items-center justify-center bg-surface px-4 text-center text-sm font-medium tracking-wide text-ink/70 transition-colors hover:bg-accent-soft hover:text-accent"
-          >
-            {b.name}
-          </Link>
-        ))}
-      </div>
+      </Reveal>
     </section>
   );
 }
 
 function RegisterCta() {
   return (
-    <section className="container-site mt-24">
-      <div className="grid items-center gap-8 rounded-xl2 border border-line bg-surface p-8 md:grid-cols-[1.4fr_1fr] md:p-12">
-        <div>
-          <p className="eyebrow mb-2">Личный кабинет</p>
-          <h2 className="h-display text-3xl">Зарегистрируйтесь и получайте больше</h2>
-          <p className="mt-4 max-w-lg text-muted">
-            История заказов, статусы доставки, скачивание Excel-файла и уведомления об акциях, новинках и прямых эфирах.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/register" className="btn-primary">Создать аккаунт</Link>
-            <Link href="/login" className="btn-ghost">У меня уже есть аккаунт</Link>
+    <section className="container-site mt-20 pb-20 sm:mt-28 sm:pb-28">
+      <Reveal>
+        <div className="overflow-hidden rounded-card bg-ink text-pearl">
+          <div className="grid items-center gap-8 p-8 sm:p-12 lg:grid-cols-[1.2fr_1fr] lg:p-16">
+            <div>
+              <h2 className="h-display text-2xl sm:text-3xl lg:text-4xl">
+                Личный кабинет для ваших заказов
+              </h2>
+              <p className="mt-4 max-w-md text-pearl/65">
+                История заказов, Excel-файл, статусы доставки и уведомления об акциях.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/register" className="btn-accent">
+                  Создать аккаунт
+                </Link>
+                <Link href="/login" className="btn-light">
+                  Войти
+                </Link>
+              </div>
+            </div>
+            <ul className="space-y-3">
+              {[
+                "История и статусы заказов",
+                "Excel-файл заказа в один клик",
+                "Загрузка подтверждения оплаты",
+                "Уведомления об акциях и стримах",
+              ].map((t) => (
+                <li
+                  key={t}
+                  className="flex items-center gap-3 border border-white/10 bg-white/5 px-4 py-3.5 text-sm"
+                >
+                  <I.Check size={18} className="shrink-0 text-accent" />
+                  {t}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <ul className="space-y-3">
-          {["История и статусы заказов", "Excel-файл заказа в один клик", "Загрузка подтверждения оплаты", "Уведомления об акциях и новинках"].map((t) => (
-            <li key={t} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink">
-              <I.Check size={18} className="text-success" />
-              {t}
-            </li>
-          ))}
-        </ul>
-      </div>
+      </Reveal>
     </section>
   );
 }

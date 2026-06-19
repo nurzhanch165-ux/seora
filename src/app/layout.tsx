@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
-import { Lora, Inter } from "next/font/google";
+import { Onest, Manrope } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FloatingContacts } from "@/components/FloatingContacts";
+import { CartToast } from "@/components/CartToast";
 import { site } from "@/data/site";
 
-const lora = Lora({
+const onest = Onest({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600"],
-  variable: "--font-serif",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-display",
   display: "swap",
 });
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -27,14 +29,22 @@ export const metadata: Metadata = {
   description: site.description,
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${lora.variable} ${inter.variable}`}>
-      <body className="min-h-screen bg-paper antialiased">
+    <html lang="ru" className={`${onest.variable} ${manrope.variable}`}>
+      <body className="min-h-screen overflow-x-hidden bg-pearl antialiased">
+        <div className="grain-overlay" aria-hidden="true" />
         <Header />
         <main className="min-h-[60vh]">{children}</main>
         <Footer />
         <FloatingContacts />
+        <CartToast />
       </body>
     </html>
   );

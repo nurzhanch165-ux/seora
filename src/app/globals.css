@@ -11,12 +11,14 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
-    background-color: theme("colors.paper");
+    background-color: theme("colors.pearl");
     color: theme("colors.ink");
     font-family: theme("fontFamily.sans");
+    overflow-x: hidden;
   }
 
   ::selection {
@@ -30,35 +32,38 @@
     border-radius: 2px;
   }
 
-  /* Refined scrollbar */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: theme("colors.paper");
+    background: theme("colors.pearl");
   }
   ::-webkit-scrollbar-thumb {
-    background: #cfc7b9;
+    background: theme("colors.chrome");
     border-radius: 999px;
-    border: 2px solid theme("colors.paper");
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #b9af9d;
+    background: theme("colors.muted");
+  }
+
+  select option {
+    color: theme("colors.ink");
+    background-color: theme("colors.surface");
   }
 }
 
 @layer components {
   .container-site {
-    @apply mx-auto w-full max-w-site px-5 sm:px-8;
+    @apply mx-auto w-full max-w-site min-w-0 px-4 sm:px-6 lg:px-8;
   }
 
   .eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-widest2 text-accent;
+    @apply text-[11px] font-semibold uppercase tracking-widest2 text-accent;
   }
 
   .h-display {
-    @apply font-serif font-light leading-[1.05] tracking-[-0.01em];
+    @apply font-display font-semibold leading-[1.08] tracking-tight2 text-balance;
   }
 
   .link-underline {
@@ -73,23 +78,34 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ease-smooth disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ease-smooth active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-ink text-paper hover:bg-accent;
+    @apply btn bg-ink text-pearl hover:bg-accent shadow-soft;
   }
   .btn-accent {
-    @apply btn bg-accent text-white hover:bg-accent-dark;
+    @apply btn bg-accent text-white hover:bg-accent-dark shadow-soft hover:shadow-glow;
   }
   .btn-outline {
-    @apply btn border border-ink/20 bg-transparent text-ink hover:border-ink hover:bg-ink hover:text-paper;
+    @apply btn border border-ink/15 bg-transparent text-ink hover:border-accent hover:text-accent;
   }
   .btn-ghost {
     @apply btn text-ink hover:bg-ink/5;
   }
+  .btn-light {
+    @apply btn border border-white/25 bg-white/10 text-white backdrop-blur-sm hover:bg-white hover:text-ink;
+  }
+
+  .icon-btn {
+    @apply relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink transition-all duration-200 hover:bg-ink/5 active:scale-95 sm:h-10 sm:w-10;
+  }
 
   .card {
-    @apply rounded-xl2 border border-line bg-surface;
+    @apply rounded-card border border-line bg-surface shadow-soft transition-shadow duration-300 hover:shadow-lift;
+  }
+
+  .card-flat {
+    @apply rounded-card border border-line bg-surface;
   }
 
   .field-label {
@@ -100,7 +116,27 @@
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-ink/40 hover:text-ink;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-accent/40 hover:text-accent;
+  }
+
+  .section-dark {
+    @apply bg-ink text-pearl;
+  }
+
+  .section-muted {
+    @apply bg-mist;
+  }
+
+  .tag {
+    @apply inline-flex items-center rounded-full bg-accent-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent;
+  }
+
+  .divider {
+    @apply h-px w-full bg-line;
+  }
+
+  .grain-overlay {
+    @apply pointer-events-none fixed inset-0 z-[100] bg-grain opacity-40 mix-blend-multiply;
   }
 }
 
@@ -114,5 +150,16 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

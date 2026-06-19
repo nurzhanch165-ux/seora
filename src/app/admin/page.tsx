@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/store/adminAuth";
 import { useOrders } from "@/store/orders";
@@ -9,12 +10,12 @@ import { Product } from "@/data/products";
 import { brandName } from "@/data/brands";
 import { formatPrice, formatDateShort } from "@/lib/format";
 import { ORDER_STATUSES, OrderStatus } from "@/lib/types";
-import { exportOrderExcel, exportWarehouseExcel } from "@/lib/excel";
+import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportItemsTotalExcel } from "@/lib/excel";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ProductEditor } from "@/components/admin/ProductEditor";
 import * as I from "@/components/icons";
 
-type Tab = "orders" | "warehouse" | "products";
+type Tab = "orders" | "warehouse" | "products" | "streams";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function AdminPage() {
         <h1 className="h-display text-3xl md:text-4xl">Администратор</h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 rounded-full border border-line bg-surface p-1">
-            {([["orders", "Заказы"], ["warehouse", "Склад / Excel"], ["products", "Товары"]] as [Tab, string][]).map(([t, label]) => (
+            {([["orders", "Заказы"], ["warehouse", "Excel"], ["products", "Товары"], ["streams", "Стримы"]] as [Tab, string][]).map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -66,6 +67,7 @@ export default function AdminPage() {
         {tab === "orders" && <OrdersAdmin />}
         {tab === "warehouse" && <WarehouseAdmin />}
         {tab === "products" && <ProductsAdmin />}
+        {tab === "streams" && <StreamsAdmin />}
       </div>
     </div>
   );
@@ -76,13 +78,26 @@ function OrdersAdmin() {
   const setStatus = useOrders((s) => s.setStatus);
   const confirmPayment = useOrders((s) => s.confirmPayment);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filterCountry, setFilterCountry] = useState("");
+  const [filterDelivery, setFilterDelivery] = useState("");
+  const [filterPayment, setFilterPayment] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  const filtered = useMemo(() => orders.filter((o) => {
+    if (filterCountry && !(o.customer.country.includes(filterCountry) || o.delivery.country.includes(filterCountry))) return false;
+    if (filterDelivery && !o.delivery.method.toLowerCase().includes(filterDelivery.toLowerCase())) return false;
+    if (filterPayment === "paid" && !o.paymentConfirmed) return false;
+    if (filterPayment === "awaiting" && o.paymentConfirmed) return false;
+    if (filterStatus && o.status !== filterStatus) return false;
+    return true;
+  }), [orders, filterCountry, filterDelivery, filterPayment, filterStatus]);
 
   const stats = useMemo(() => ({
-    total: orders.length,
-    paid: orders.filter((o) => o.paymentConfirmed).length,
-    awaiting: orders.filter((o) => !o.paymentConfirmed).length,
-    revenue: orders.filter((o) => o.paymentConfirmed).reduce((s, o) => s + o.total, 0),
-  }), [orders]);
+    total: filtered.length,
+    paid: filtered.filter((o) => o.paymentConfirmed).length,
+    awaiting: filtered.filter((o) => !o.paymentConfirmed).length,
+    revenue: filtered.filter((o) => o.paymentConfirmed).reduce((s, o) => s + (o.totalConverted ?? o.total), 0),
+  }), [filtered]);
 
   if (orders.length === 0) {
     return <div className="card py-20 text-center text-muted">Заказов пока нет. Оформите тестовый заказ в каталоге.</div>;
@@ -90,6 +105,19 @@ function OrdersAdmin() {
 
   return (
     <>
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <input placeholder="Страна" value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)} className="field text-sm" />
+        <input placeholder="Доставка" value={filterDelivery} onChange={(e) => setFilterDelivery(e.target.value)} className="field text-sm" />
+        <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)} className="field text-sm">
+          <option value="">Все оплаты</option>
+          <option value="paid">Оплачено</option>
+          <option value="awaiting">Ожидает</option>
+        </select>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="field text-sm">
+          <option value="">Все статусы</option>
+          {ORDER_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </div>
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Всего заказов" value={String(stats.total)} />
         <Stat label="Оплачено" value={String(stats.paid)} />
@@ -98,7 +126,7 @@ function OrdersAdmin() {
       </div>
 
       <div className="space-y-3">
-        {orders.map((order) => {
+        {filtered.map((order) => {
           const open = openId === order.id;
           return (
             <div key={order.id} className="card overflow-hidden">
@@ -195,9 +223,9 @@ function OrdersAdmin() {
 
 function WarehouseAdmin() {
   const orders = useOrders((s) => s.orders);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [paidOnly, setPaidOnly] = useState(true);
+  const [from, setFrom] = useState(new Date().toISOString().slice(0, 10));
+  const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
+  const [paidOnly, setPaidOnly] = useState(false);
 
   function preset(days: number) {
     const now = new Date();
@@ -217,50 +245,128 @@ function WarehouseAdmin() {
     });
   }, [orders, from, to, paidOnly]);
 
-  const totalSum = filtered.reduce((s, o) => s + o.total, 0);
+  const dateLabel = from === to ? from.replace(/-/g, "_") : `${from}_${to}`;
 
-  function exportNow() {
-    const label = from || to ? `${from || "…"} — ${to || "…"}` : "все даты";
-    exportWarehouseExcel(filtered, `${label}${paidOnly ? " · только оплаченные" : ""}`);
+  return (
+    <div className="space-y-6">
+      <div className="card p-6 md:p-8">
+        <h2 className="text-lg font-medium">Excel-файлы для склада</h2>
+        <p className="mt-1 text-sm text-muted">
+          Три типа файлов по ТЗ: общий за день, количество товаров, формат склада.
+        </p>
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button onClick={() => preset(1)} className="chip">Сегодня</button>
+          <button onClick={() => preset(7)} className="chip">За неделю</button>
+          <button onClick={() => { const t = new Date().toISOString().slice(0, 10); setFrom(t); setTo(t); }} className="chip">Только дата</button>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="field-label">С даты</label>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="field" />
+          </div>
+          <div>
+            <label className="field-label">По дату</label>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="field" />
+          </div>
+        </div>
+
+        <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm text-muted">
+          <input type="checkbox" checked={paidOnly} onChange={(e) => setPaidOnly(e.target.checked)} className="h-4 w-4 accent-accent" />
+          Только оплаченные заказы
+        </label>
+
+        <p className="mt-4 text-sm text-muted">К выгрузке: <span className="font-medium text-ink">{filtered.length}</span> заказов</p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <button onClick={() => exportDailyOrdersExcel(filtered, dateLabel)} disabled={filtered.length === 0} className="btn-primary text-sm">
+            <I.Download size={16} /> orders_{dateLabel}.xlsx
+          </button>
+          <button onClick={() => exportItemsTotalExcel(filtered)} disabled={filtered.length === 0} className="btn-outline text-sm">
+            <I.Download size={16} /> items_total
+          </button>
+          <button onClick={() => exportWarehouseExcel(filtered, dateLabel)} disabled={filtered.length === 0} className="btn-outline text-sm">
+            <I.Download size={16} /> Формат склада
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StreamsAdmin() {
+  const all = useCatalogProducts();
+  const [streams, setStreams] = useState<{ id: string; title: string; stream_date: string; ended_at: string }[]>([]);
+  const [title, setTitle] = useState("");
+  const [streamDate, setStreamDate] = useState(new Date().toISOString().slice(0, 10));
+  const [endedAt, setEndedAt] = useState(new Date().toISOString().slice(0, 16));
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    fetch("/api/streams").then((r) => r.json()).then((j) => setStreams(j.streams ?? []));
+  }, []);
+
+  async function createStream() {
+    setMsg("");
+    const res = await fetch("/api/streams", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: title || `Стрим ${streamDate}`,
+        streamDate,
+        endedAt: new Date(endedAt).toISOString(),
+        products: selectedProducts.map((id, i) => ({ productId: id, position: i })),
+      }),
+    });
+    const j = await res.json();
+    if (!res.ok) { setMsg(j.error ?? "Ошибка"); return; }
+    setStreams((s) => [j.stream, ...s]);
+    setTitle("");
+    setSelectedProducts([]);
+    setMsg("Стрим создан");
   }
 
   return (
-    <div className="card p-6 md:p-8">
-      <h2 className="text-lg font-medium">Общий Excel-файл для склада</h2>
-      <p className="mt-1 text-sm text-muted">
-        Объедините заказы за период в один файл для отгрузки. Отправки формируются дважды в неделю.
-      </p>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        <button onClick={() => preset(1)} className="chip">Сегодня</button>
-        <button onClick={() => preset(7)} className="chip">За неделю</button>
-        <button onClick={() => preset(30)} className="chip">За месяц</button>
-        <button onClick={() => { setFrom(""); setTo(""); }} className="chip">Все даты</button>
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h2 className="text-lg font-medium">Новый стрим</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div><label className="field-label">Название</label><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Стрим 19.06.2026" /></div>
+          <div><label className="field-label">Дата стрима</label><input type="date" className="field" value={streamDate} onChange={(e) => setStreamDate(e.target.value)} /></div>
+          <div><label className="field-label">Окончание стрима</label><input type="datetime-local" className="field" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} /></div>
+        </div>
+        <div className="mt-4">
+          <label className="field-label">Товары из базы</label>
+          <div className="max-h-48 overflow-y-auto rounded-xl border border-line p-3">
+            {all.slice(0, 30).map((p) => (
+              <label key={p.id} className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                <input type="checkbox" checked={selectedProducts.includes(p.id)} onChange={(e) => {
+                  setSelectedProducts((prev) => e.target.checked ? [...prev, p.id] : prev.filter((x) => x !== p.id));
+                }} />
+                {p.name}
+              </label>
+            ))}
+          </div>
+        </div>
+        {msg && <p className="mt-3 text-sm text-accent">{msg}</p>}
+        <button onClick={createStream} className="btn-primary mt-4">Создать стрим</button>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="field-label">С даты</label>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="field" />
+      <div className="card p-6">
+        <h2 className="text-lg font-medium">Все стримы ({streams.length})</h2>
+        <div className="mt-4 space-y-2">
+          {streams.map((s) => (
+            <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3">
+              <div>
+                <p className="font-medium">{s.title}</p>
+                <p className="text-xs text-muted">{s.stream_date}</p>
+              </div>
+              <Link href={`/streams/${s.id}`} className="btn-outline px-3 py-1.5 text-xs">Открыть</Link>
+            </div>
+          ))}
         </div>
-        <div>
-          <label className="field-label">По дату</label>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="field" />
-        </div>
-      </div>
-
-      <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm text-muted">
-        <input type="checkbox" checked={paidOnly} onChange={(e) => setPaidOnly(e.target.checked)} className="h-4 w-4 accent-accent" />
-        Только оплаченные заказы
-      </label>
-
-      <div className="mt-6 flex flex-wrap items-center gap-4 rounded-xl border border-line bg-paper p-4">
-        <div className="flex-1">
-          <p className="text-sm text-muted">К выгрузке: <span className="font-medium text-ink">{filtered.length}</span> заказов на <span className="font-medium text-ink">{formatPrice(totalSum)}</span></p>
-        </div>
-        <button onClick={exportNow} disabled={filtered.length === 0} className="btn-primary">
-          <I.Download size={18} /> Скачать общий Excel
-        </button>
       </div>
     </div>
   );

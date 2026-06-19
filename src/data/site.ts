@@ -3,8 +3,8 @@ export const site = {
   fullName: "SonyShopKorea — корейская косметика и здоровье",
   description:
     "Прямые поставки косметики и нутрицевтиков из Южной Кореи. Оригинальная продукция, бережная доставка по всему миру.",
-  currency: "₸",
-  currencyCode: "KZT",
+  currency: "₩",
+  currencyCode: "KRW",
   locale: "ru-RU",
   contacts: {
     whatsapp: "+7 (700) 000-00-00",

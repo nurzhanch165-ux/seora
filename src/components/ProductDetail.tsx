@@ -36,7 +36,7 @@ export function ProductDetail({ product }: { product: Product }) {
 
   return (
     <>
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-10">
         {/* Gallery */}
         <div className="lg:sticky lg:top-28 lg:self-start">
           <ProductVisual
@@ -44,7 +44,7 @@ export function ProductDetail({ product }: { product: Product }) {
             glyph={product.glyph}
             brand={brandName(product.brandSlug)}
             image={images[activeImage]}
-            className="aspect-square w-full rounded-xl2 border border-line"
+            className="aspect-square w-full rounded-card border border-line"
             glyphSize={96}
           />
           {images.length > 1 ? (
@@ -83,8 +83,8 @@ export function ProductDetail({ product }: { product: Product }) {
         </div>
 
         {/* Buy box */}
-        <div>
-          <div className="flex items-center gap-3 text-xs">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:gap-3">
             <Link href={`/brands/${product.brandSlug}`} className="font-medium uppercase tracking-wider text-accent">
               {brandName(product.brandSlug)}
             </Link>
@@ -95,7 +95,7 @@ export function ProductDetail({ product }: { product: Product }) {
             )}
           </div>
 
-          <h1 className="mt-3 font-serif text-3xl font-light leading-tight md:text-4xl">{product.name}</h1>
+          <h1 className="mt-3 font-display text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl">{product.name}</h1>
 
           <div className="mt-3 flex items-center gap-2 text-sm text-muted">
             <span className="flex items-center gap-1">
@@ -109,8 +109,8 @@ export function ProductDetail({ product }: { product: Product }) {
 
           <p className="mt-5 text-[15px] leading-relaxed text-muted">{product.shortDescription}</p>
 
-          <div className="mt-6 flex items-end gap-3">
-            <span className="text-3xl font-semibold text-ink">{formatPrice(product.price)}</span>
+          <div className="mt-6 flex flex-wrap items-end gap-2 sm:gap-3">
+            <span className="text-2xl font-semibold text-ink sm:text-3xl">{formatPrice(product.price)}</span>
             {product.oldPrice && (
               <>
                 <span className="text-lg text-faint line-through">{formatPrice(product.oldPrice)}</span>
@@ -130,8 +130,8 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
 
           {/* qty + add */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <div className="flex items-center rounded-full border border-line">
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex items-center self-start rounded-full border border-line">
               <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-12 w-12 items-center justify-center text-ink hover:text-accent" aria-label="Меньше">
                 <I.Minus size={18} />
               </button>
@@ -140,21 +140,21 @@ export function ProductDetail({ product }: { product: Product }) {
                 <I.Plus size={18} />
               </button>
             </div>
-            <button onClick={handleAdd} className="btn-primary h-12 flex-1 min-w-[200px]">
+            <button onClick={handleAdd} className="btn-primary h-12 w-full sm:min-w-[200px] sm:flex-1">
               {added ? (
                 <>
                   <I.Check size={18} /> Добавлено в корзину
                 </>
               ) : (
                 <>
-                  <I.Bag size={18} /> Добавить в корзину · {formatPrice(product.price * qty)}
+                  <I.Bag size={18} /> <span className="truncate">Добавить · {formatPrice(product.price * qty)}</span>
                 </>
               )}
             </button>
             <button
               onClick={() => toggle(product.id)}
               aria-label="В избранное"
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-accent hover:text-accent"
+              className="flex h-12 w-12 shrink-0 items-center justify-center self-start rounded-full border border-line text-ink transition-colors hover:border-accent hover:text-accent sm:self-auto"
             >
               {liked ? <I.HeartFilled size={20} className="text-accent" /> : <I.Heart size={20} />}
             </button>
@@ -178,7 +178,7 @@ export function ProductDetail({ product }: { product: Product }) {
       </div>
 
       {/* Details */}
-      <div className="mt-16 grid gap-6 lg:grid-cols-3">
+      <div className="mt-12 grid min-w-0 gap-6 sm:mt-16 lg:grid-cols-3">
         <InfoCard title="Описание" icon={<I.Info size={18} />}>
           <p>{product.fullDescription}</p>
         </InfoCard>

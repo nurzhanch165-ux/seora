@@ -8,17 +8,17 @@ import { useAuth } from "@/store/auth";
 import { useAdminAuth } from "@/store/adminAuth";
 import { useOrders } from "@/store/orders";
 import { useCatalogProducts } from "@/store/catalog";
+import { usePreferences } from "@/store/preferences";
 import { brandName } from "@/data/brands";
 import { site } from "@/data/site";
-import { formatPrice } from "@/lib/format";
 import { useHydrated } from "@/lib/useHydrated";
 import { exportOrderExcel } from "@/lib/excel";
+import { convertFromKrw, EXCHANGE_RATES, formatCurrency } from "@/lib/currency";
+import { getDeliveryMethods, defaultMethod } from "@/lib/delivery";
 import { Customer, Delivery } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductVisual } from "@/components/ProductVisual";
 import * as I from "@/components/icons";
-
-const DELIVERY_METHODS = ["Международная почта", "СДЭК", "Карго (авиа)", "Самовывоз со склада"];
 
 function genNumber() {
   const d = new Date();
@@ -34,16 +34,11 @@ export default function CheckoutPage() {
   const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
   const adminReady = useAdminAuth((s) => s.ready);
   const adminCheck = useAdminAuth((s) => s.check);
+  const currency = usePreferences((s) => s.currency);
   const lines = useCart((s) => s.lines);
   const clear = useCart((s) => s.clear);
   const createOrder = useOrders((s) => s.createOrder);
   const catalog = useCatalogProducts();
-
-  const items = useMemo(
-    () => lines.map((l) => ({ line: l, product: catalog.find((p) => p.id === l.productId) })).filter((x) => x.product),
-    [lines, catalog]
-  );
-  const total = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
 
   const [customer, setCustomer] = useState<Customer>({
     lastName: "", firstName: "", middleName: "", country: "", city: "",
@@ -51,13 +46,33 @@ export default function CheckoutPage() {
   });
   const [delivery, setDelivery] = useState<Delivery>({
     country: "", city: "", address: "", zip: "", recipient: "", recipientPhone: "",
-    method: DELIVERY_METHODS[0], comment: "",
+    method: "Авиа (K)", comment: "",
   });
   const [comment, setComment] = useState("");
   const [agreeData, setAgreeData] = useState(true);
   const [agreeMarketing, setAgreeMarketing] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const items = useMemo(
+    () => lines.map((l) => ({ line: l, product: catalog.find((p) => p.id === l.productId) })).filter((x) => x.product),
+    [lines, catalog]
+  );
+  const totalKrw = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
+  const conversion = convertFromKrw(totalKrw, currency);
+  const total = conversion.total;
+
+  const deliveryMethods = useMemo(
+    () => getDeliveryMethods(delivery.country || customer.country),
+    [delivery.country, customer.country]
+  );
+
+  useEffect(() => {
+    if (delivery.country || customer.country) {
+      const def = defaultMethod(delivery.country || customer.country);
+      setDelivery((d) => ({ ...d, method: def.labelExcel === "авиа" ? "Авиа (K)" : def.label }));
+    }
+  }, [delivery.country, customer.country]);
 
   useEffect(() => {
     adminCheck();
@@ -141,11 +156,28 @@ export default function CheckoutPage() {
       customerId: account?.id ?? null,
       customer: { ...customer, email: customer.email?.trim() || undefined },
       delivery: { ...delivery, comment },
-      items: items.map((x) => ({
-        productId: x.product!.id, slug: x.product!.slug, name: x.product!.name,
-        brand: brandName(x.product!.brandSlug), price: x.product!.price, qty: x.line.qty,
-      })),
-      total,
+      items: items.map((x) => {
+        const krw = x.product!.price;
+        const conv = convertFromKrw(krw, currency);
+        return {
+          productId: x.product!.id,
+          slug: x.product!.slug,
+          name: x.product!.name,
+          brand: brandName(x.product!.brandSlug),
+          price: krw,
+          priceKrw: krw,
+          priceConverted: conv.total,
+          sku: x.product!.id,
+          qty: x.line.qty,
+        };
+      }),
+      total: totalKrw,
+      totalKrw,
+      totalConverted: total,
+      currencyCode: currency,
+      exchangeRate: EXCHANGE_RATES[currency],
+      feeAmount: conversion.fee,
+      source: "catalog",
       comment,
     });
     setSubmitting(false);
@@ -173,9 +205,14 @@ export default function CheckoutPage() {
               <Field label="Отчество *" value={customer.middleName} onChange={(v) => setCustomer({ ...customer, middleName: v })} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Страна *" value={customer.country} onChange={(v) => setCustomer({ ...customer, country: v })} />
+              <Field label="Страна *" value={customer.country} onChange={(v) => setCustomer({ ...customer, country: v })} list="countries-list" />
               <Field label="Город *" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
             </div>
+            <datalist id="countries-list">
+              {["Казахстан", "Южная Корея", "Германия", "Франция", "Россия"].map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Телефон *" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
               <Field label="WhatsApp *" value={customer.whatsapp} onChange={(v) => setCustomer({ ...customer, whatsapp: v })} />
@@ -198,14 +235,14 @@ export default function CheckoutPage() {
             <div>
               <label className="field-label">Способ доставки</label>
               <div className="flex flex-wrap gap-2">
-                {DELIVERY_METHODS.map((m) => (
+                {deliveryMethods.map((m) => (
                   <button
                     type="button"
-                    key={m}
-                    onClick={() => setDelivery({ ...delivery, method: m })}
-                    className={`chip ${delivery.method === m ? "border-accent bg-accent-soft text-accent" : ""}`}
+                    key={m.id}
+                    onClick={() => setDelivery({ ...delivery, method: m.label })}
+                    className={`chip ${delivery.method === m.label ? "border-accent bg-accent-soft text-accent" : ""}`}
                   >
-                    {m}
+                    {m.label}{m.priceNote ? ` · ${m.priceNote}` : ""}
                   </button>
                 ))}
               </div>
@@ -244,17 +281,20 @@ export default function CheckoutPage() {
                   <ProductVisual tone={product!.tone} glyph={product!.glyph} image={product!.images?.[0]} className="h-14 w-14 shrink-0 rounded-lg" glyphSize={22} />
                   <div className="flex-1 text-sm">
                     <p className="line-clamp-2 leading-snug text-ink">{product!.name}</p>
-                    <p className="mt-0.5 text-xs text-muted">{line.qty} × {formatPrice(product!.price)}</p>
+                    <p className="mt-0.5 text-xs text-muted">{line.qty} × {formatCurrency(convertFromKrw(product!.price, currency).total, currency)}</p>
                   </div>
-                  <span className="text-sm font-medium">{formatPrice(product!.price * line.qty)}</span>
+                  <span className="text-sm font-medium">{formatCurrency(convertFromKrw(product!.price * line.qty, currency).total, currency)}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-line p-5">
               <div className="flex justify-between text-base font-semibold text-ink">
-                <span>Итого</span>
-                <span>{formatPrice(total)}</span>
+                <span>Итого ({currency})</span>
+                <span>{formatCurrency(total, currency)}</span>
               </div>
+              {currency !== "KRW" && (
+                <p className="mt-1 text-xs text-muted">≈ {formatCurrency(totalKrw, "KRW")} + комиссия 3%</p>
+              )}
               {error && (
                 <p className="mt-4 rounded-lg bg-sale/10 px-3 py-2 text-xs text-sale">{error}</p>
               )}
@@ -278,7 +318,7 @@ export default function CheckoutPage() {
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="card p-6">
+    <section className="card p-4 sm:p-6">
       <div className="mb-5">
         <h2 className="text-lg font-medium">{title}</h2>
         {hint && <p className="text-sm text-muted">{hint}</p>}
@@ -288,11 +328,11 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, value, onChange, list }: { label: string; value: string; onChange: (v: string) => void; list?: string }) {
   return (
     <div>
       <label className="field-label">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="field" />
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="field" list={list} />
     </div>
   );
 }

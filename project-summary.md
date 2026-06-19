@@ -2,7 +2,7 @@
 
 > Этот файл — краткое и полное описание проекта для продолжения работы в новом чате.
 > Вставьте его содержимое в начало нового диалога, чтобы ассистент сразу понял контекст.
-> **Последнее обновление:** июнь 2026 — Supabase + Vercel + GitHub; вторая сессия: фикс регистрации, адрес в Excel, устранение «вылетов» из ЛК, мобильная оптимизация, доступ админа к ЛК/оформлению.
+> **Последнее обновление:** июнь 2026 — доработка по **ТЗ заказчика** (Excel, стримы, валюта, доставка, редизайн), миграция Supabase `streams`, скиллы **taste-skill**. **Все правки пока локально — не запушены на Vercel.**
 
 ---
 
@@ -43,7 +43,9 @@
 | Заказы и позиции | Таблицы `orders`, `order_items` |
 | Фото товаров | Supabase Storage `product-images` (публичный) |
 | Скриншоты оплаты | Supabase Storage `payment-screenshots` (приватный, signed URL) |
-| Корзина, избранное | `localStorage` (как и раньше) |
+| Корзина, избранное | `localStorage` (`sonyshopkorea-cart`, `sonyshopkorea-wishlist`) |
+| Язык и валюта (UI) | `localStorage` (`sonyshopkorea-prefs`) |
+| Стримы и товары стримов | Таблицы `streams`, `stream_products` в Supabase |
 | Текущий клиент в ЛК | `localStorage` (`sonyshopkorea-auth`, без пароля) |
 | Сессия админа | httpOnly-cookie `sonyshopkorea_admin` (сервер) |
 
@@ -55,18 +57,18 @@
 
 ### Сайт (Vercel)
 
-- **Целевая ссылка (после переименования проекта):** https://sonyshopkorea.vercel.app
-- **Текущая ссылка (до переименования):** https://seora-shop.vercel.app, также https://seora-nine.vercel.app
-- Панель: https://vercel.com/nurzhan1/seora
-- Проект Vercel: `nurzhan1/seora` → переименовать в `sonyshopkorea` (Vercel → Project → Settings → General → Project Name). Vercel URL формируется из имени проекта; `sonyshopkorea.vercel.app` должен быть свободен.
-
-> **TODO (ручной шаг):** переименовать проект Vercel в `sonyshopkorea`, чтобы ссылка стала `sonyshopkorea.vercel.app`. Это не меняется из кода.
+- **Основная ссылка:** https://sonyshopkorea.vercel.app
+- Панель: https://vercel.com/nurzhan1/sonyshopkorea
+- Проект Vercel: `nurzhan1/sonyshopkorea`
+- Старые alias (`seora-shop.vercel.app` и др.) могут ещё работать, пока не удалены в Domains
 
 ### GitHub
 
-- **Репозиторий:** https://github.com/nurzhanch165-ux/seora → переименовать в `sonyshopkorea` (GitHub → Settings → Repository name). После переименования обновить `git remote set-url origin ...`.
+- **Репозиторий:** https://github.com/nurzhanch165-ux/seora (имя папки на диске может остаться «каталог корейской косметики»; переименование репозитория в `sonyshopkorea` — опционально)
 - Ветка: `main`
 - Git подключён к Vercel → **авто-деплой при `git push`**
+- Последний **запушенный** коммит: `383fcd0` — `rebrand: SEORA -> SonyShopKorea`
+- **НЕ запушено (локально, июнь 2026):** мобильная вёрстка (сессия 3) + вся доработка по ТЗ и редизайн (сессия 4) — см. разделы 11-ter, 11-quater
 
 ### Supabase
 
@@ -101,13 +103,42 @@ ADMIN_PASSWORD=admin123
 
 ---
 
-## 4. Дизайн-система
+## 4. Дизайн-система (актуальная после сессии 4)
 
-- Палитра (в `tailwind.config.ts`): тёплая «бумажная» база `paper #F4F1EA`, поверхности `surface`, текст `ink #1A1A17`, приглушённый `muted`, акцент-терракота `accent #9B5B3F`, статусные цвета `sale`, `success`.
-- Стиль — luxury-минимализм (много воздуха, сериф-заголовки, сдержанный акцент).
-- Глобальные классы в `src/app/globals.css`: `.btn-primary/.btn-outline/.btn-ghost/.btn-accent`, `.card`, `.field`, `.field-label`, `.chip`, `.eyebrow`, `.h-display`, `.container-site`, `.link-underline`.
-- **Иконки нарисованы вручную** в `src/components/icons.tsx`.
-- Обложка товара: `src/components/ProductVisual.tsx` — фото из Storage (`images[]`) или градиент с глифом.
+### Палитра (`tailwind.config.ts`)
+
+| Токен | Цвет | Назначение |
+|-------|------|------------|
+| `paper` | `#F7F4EF` | Фон страницы |
+| `surface` | `#FDFCFA` | Карточки |
+| `ink` / `navy` | `#0C1427` | Текст, тёмные секции |
+| `accent` | `#C7303E` | Кнопки, акцент (корейский красный) |
+| `gold` | `#C9A962` | Подзаголовки на тёмном фоне |
+| `success` | `#2D6A4F` | Статусы |
+
+**Было (сессии 1–3):** терракота `#9B5B3F`, бумага `#F4F1EA`.
+
+### Визуал
+
+- Hero и стримы: AI-изображения через **Higgsfield** → `public/images/hero-korea.png`, `public/images/streams-bg.png`
+- Шрифты: **Lora** (заголовки) + **Inter** (UI)
+- Иконки — ручные SVG в `src/components/icons.tsx` (без эмодзи)
+- Классы: `.btn-primary` (navy→accent), `.icon-btn`, `.card`, `.section-dark`, `.gradient-text`, `.card-glass`
+
+### Cursor skills (design)
+
+Установлен пакет **Leonxlnx/taste-skill** (`npx skills add Leonxlnx/taste-skill`):
+
+```
+.agents/skills/
+  design-taste-frontend      — anti-slop UI, редизайн
+  redesign-existing-projects
+  high-end-visual-design
+  imagegen-frontend-web/mobile
+  … (всего 13 скиллов)
+```
+
+При доработке дизайна — читать `.agents/skills/design-taste-frontend/SKILL.md`.
 
 ---
 
@@ -118,13 +149,17 @@ ADMIN_PASSWORD=admin123
 Полный SQL: `supabase/schema.sql` (применён к проекту через Supabase MCP).
 
 **Таблицы:**
-- `customers` — клиенты (`password_hash` bcrypt через pgcrypto, **никогда не отдаётся клиенту**)
-- `products` — каталог (id текстом: `p01`, `h01`, добавленные — `ap...`)
-- `orders` — заказы (`customer` и `delivery` как jsonb-снимки)
-- `order_items` — позиции заказа
+- `customers` — клиенты (+ поля `admin_comment`, `zip`, `address` после миграции 2026-06)
+- `products` — каталог (+ `sku`, `active` после миграции)
+- `orders` — заказы (+ `source`, `stream_id`, `stream_name`, `currency_code`, `exchange_rate`, `total_krw`, `total_converted`, `fee_amount`, `admin_comment`)
+- `order_items` — позиции (+ `sku`, `price_krw`, `price_converted`)
+- `streams` — стримы (`title`, `stream_date`, `ended_at`)
+- `stream_products` — товары в стриме (`product_id`, `price_override`, `stock`, `position`)
+
+**Миграция:** `supabase/migrations/20260619_streams_and_orders.sql` — **применена** к Supabase через MCP (`apply_migration`, project `tmdakiocltbfjawkdwdw`).
 
 **RLS:**
-- `products` — публичное чтение (anon)
+- `products`, `streams`, `stream_products` — публичное чтение (anon)
 - `customers`, `orders`, `order_items` — **без политик для anon**; доступ только через RPC и серверные роуты с `service_role`
 
 **RPC-функции (security definer):**
@@ -150,9 +185,12 @@ ADMIN_PASSWORD=admin123
 | `POST /api/admin/upload` | Загрузка фото в Storage → URL |
 | `GET /api/orders?customerId=` | Заказы клиента |
 | `GET /api/orders` | Все заказы (только админ) |
-| `POST /api/orders` | Создание заказа |
+| `POST /api/orders` | Создание заказа (с полями валюты, source, stream) |
 | `PATCH /api/orders/[id]` | Смена статуса / подтверждение оплаты (админ) |
 | `POST /api/orders/[id]/screenshot` | Загрузка скриншота оплаты |
+| `GET /api/streams` | Список стримов |
+| `POST /api/streams` | Создание стрима (админ) |
+| `GET/PATCH/DELETE /api/streams/[id]` | Стрим + товары |
 | `POST /api/seed` | Заливка seed-каталога (только админ) |
 
 ### Клиенты Supabase
@@ -170,27 +208,43 @@ ADMIN_PASSWORD=admin123
 ```
 src/
   app/
-    api/                        серверные роуты (см. раздел 5)
-    ...страницы как раньше...
+    api/
+      admin/ … orders/ … streams/ … seed/
+    streams/                    список и /streams/[id]
+    page.tsx                    главная (блоки по ТЗ)
+    delivery/page.tsx           доставка KZ/EU/KR
+    checkout/page.tsx           валюта + доставка по стране
+    admin/page.tsx              вкладки: Заказы, Excel, Товары, Стримы
+  components/
+    CartToast.tsx               «Товар добавлен в корзину»
+    LocaleCurrencyBar.tsx       RU/EN/KO + KRW/KZT/USD/EUR
+    Header.tsx, ProductCard.tsx, …
   lib/
-    supabase/                   client, admin, products, orders
-    adminAuth.server.ts         серверная авторизация админа
-    types.ts, excel.ts, format.ts, useHydrated.ts
+    currency.ts                 KRW база, +3% комиссия, курсы (захардкожены)
+    delivery.ts                 KZ авиа/карго, EU EMS, KR внутри страны
+    i18n.ts                     базовые переводы (~20 ключей)
+    excel.ts                    3 типа Excel + формат склада
+    types.ts                    Order + Stream, isStreamOpen(), таймер 24ч
+    supabase/ …
   store/
-    catalog.ts                  читает products из Supabase; админ-запись через API
-    auth.ts                     RPC Supabase; current в localStorage (без пароля)
-    orders.ts                   CRUD через API; скриншоты в Storage
-    adminAuth.ts                cookie-сессия через /api/admin/*
-    cart.ts, wishlist.ts        localStorage (без изменений)
+    preferences.ts              locale + currency (sonyshopkorea-prefs)
+    cartToast.ts
+    catalog.ts, auth.ts, orders.ts, cart.ts, wishlist.ts, adminAuth.ts
   data/
-    products.ts                 SEED (25 товаров); залит в БД через scripts/seed.ts
-    categories.ts, brands.ts, site.ts
+    site.ts                     currencyCode: KRW, currency: ₩
+public/
+  images/
+    hero-korea.png              Higgsfield hero
+    streams-bg.png              Higgsfield фон стримов
 supabase/
-  schema.sql                    полная схема БД + RPC + RLS
-scripts/
-  seed.ts                       заливка seed в Supabase (npx tsx scripts/seed.ts)
-.env.example                    список env-переменных
+  schema.sql                    базовая схема
+  migrations/
+    20260619_streams_and_orders.sql
+.agents/skills/                 taste-skill (13 скиллов дизайна)
+scripts/seed.ts
 ```
+
+**ТЗ заказчика (PDF):** `c:\Users\nurzh\Downloads\Техническое задание по доработке сайта SonyShopKorea.pdf`
 
 ---
 
@@ -227,14 +281,50 @@ scripts/
 
 ---
 
-## 9. Заказы
+## 9. Заказы, Excel, валюта
 
-- Создание: `POST /api/orders` при оформлении (`checkout/page.tsx`).
-- Клиент видит свои заказы: `GET /api/orders?customerId=<uuid>`.
-- Админ видит все: `GET /api/orders` (нужна cookie админа).
-- Скриншот оплаты: `POST /api/orders/[id]/screenshot` → Storage `payment-screenshots`.
-- Подтверждение оплаты / смена статуса: `PATCH /api/orders/[id]` (админ).
-- Excel по-прежнему генерируется на клиенте (`src/lib/excel.ts`).
+### Заказы
+
+- Создание: `POST /api/orders` при оформлении (`checkout/page.tsx`). Номер: **`SSK-YYMMDD-XXX`**
+- В заказ сохраняются: `source` (`catalog` | `stream`), `currencyCode`, `exchangeRate`, `totalKrw`, `totalConverted`, `feeAmount`, `streamId`, `streamName`
+- ⚠️ Заказы **со страницы стрима** пока всё ещё уходят как `source: catalog` — нужно доделать
+- Скриншот оплаты → Storage `payment-screenshots`; подтверждение → `PATCH /api/orders/[id]`
+
+### Excel (`src/lib/excel.ts`) — приоритет ТЗ
+
+| Функция | Файл | Назначение |
+|---------|------|------------|
+| `exportDailyOrdersExcel` | `orders_2026_06_19.xlsx` | Полный формат ТЗ (28 колонок), одна строка = один товар |
+| `exportItemsTotalExcel` | `items_total_*.xlsx` | Агрегация кол-ва по товарам за дату |
+| `exportWarehouseExcel` | `warehouse_*.xlsx` | **Формат склада заказчика** (RU/KR заголовки, ₩, карго/авиа/EMS) |
+| `exportOrderExcel` | `order_{номер}_{имя}.xlsx` | Файл для клиента |
+
+Скачивание: админка → вкладка **Excel** (выбор даты, фильтр «только оплаченные»).
+
+### Валюта (`src/lib/currency.ts`)
+
+- Базовая цена товара в БД — **KRW (₩)**
+- Отображение: KRW / KZT / USD / EUR (переключатель в шапке)
+- Конвертация: курс × **+3% комиссия** (`CONVERSION_FEE = 0.03`)
+- Курсы **захардкожены** в `EXCHANGE_RATES` — нужны живые API для продакшена
+
+### Доставка (`src/lib/delivery.ts`)
+
+| Регион | Способы |
+|--------|---------|
+| Казахстан | Авиа (K) 9$/кг, Карго (CK) 4$/кг |
+| Европа | Только EMS |
+| Южная Корея | Внутри страны |
+| Остальные | EMS |
+
+Checkout подставляет методы по стране клиента/доставки.
+
+### Стримы
+
+- `/streams` — список; `/streams/[id]` — товары + **таймер 24ч** после `ended_at`
+- После 24ч: товары видны, кнопка «В корзину» недоступна
+- Админка → **Стримы**: создать стрим, выбрать товары из базы, задать дату окончания
+- Соцссылки TikTok/Telegram на странице стримов
 
 ---
 
@@ -330,52 +420,237 @@ git push
 
 ---
 
-## 12. Известные ограничения и следующие шаги
+## 11-ter. Что сделано в третьей сессии (июнь 2026) — ребрендинг + домен + мобильная вёрстка
 
-### Ограничения
+### A. Ребрендинг SEORA → SonyShopKorea
 
-1. Авторизация клиентов — **кастомная** (логин/пароль в таблице, не Supabase Auth). Для enterprise-безопасности можно мигрировать на Supabase Auth.
-2. «Забыли пароль» — сверка логина + телефона, без SMS/email.
-3. Категории — по-прежнему в `data/categories.ts` (не в БД, не редактируются админом).
-4. Корзина и избранное — только в браузере (localStorage).
-5. Next.js 14.2.5 — есть security advisory; стоит обновить при удобном случае.
-6. Свой домен (`seora.kz` и т.д.) — не подключён; можно добавить в Vercel → Settings → Domains.
+Полная замена бренда в коде (по запросу заказчика — «прям все Seora»).
 
-### План развития (приоритеты)
+**Отображаемое название и контакты** (`src/data/site.ts`):
+- `name`: `SonyShopKorea`, `fullName`: `SonyShopKorea — корейская косметика и здоровье`
+- Соцсети/email (пока заглушки, при необходимости заменить на реальные): `@sonyshopkorea`, `hello@sonyshopkorea.com`
+- Получатель карты: `SONYSHOPKOREA TRADE`
 
-1. Подключить **свой домен** (если есть).
-2. **Ротация** `service_role` ключа Supabase (если утекал).
-3. Серверные роли (админ / менеджер / склад).
-4. Онлайн-оплата.
-5. Уведомления (email, Telegram, WhatsApp).
-6. Мультиязычность (`next-intl`).
-7. Оптовые клиенты, минимальная сумма заказа.
-8. SSR/metadata для страниц товаров (сейчас клиентские для чтения из Supabase).
+**Внутренние ключи** (после смены у пользователей обнуляются корзина, избранное, сессия):
+| Было | Стало |
+|------|-------|
+| `seora-cart` | `sonyshopkorea-cart` |
+| `seora-wishlist` | `sonyshopkorea-wishlist` |
+| `seora-auth` | `sonyshopkorea-auth` |
+| cookie `seora_admin` | `sonyshopkorea_admin` |
+
+**Файлы с правками:**
+- `src/data/site.ts` — название, контакты, реквизиты
+- `src/store/cart.ts`, `wishlist.ts`, `auth.ts` — ключи localStorage
+- `src/lib/adminAuth.server.ts` — имя cookie
+- `src/app/checkout/page.tsx` — префикс номера заказа `SSK-`
+- `README.md`, `.env.example`, `supabase/schema.sql` — заголовки
+
+**Деплой ребрендинга:** пользователь выполнил `git push` вручную (терминал в Cursor иногда не отвечает). Коммит на GitHub: `rebrand: SEORA -> SonyShopKorea`.
+
+### B. Домен Vercel
+
+- Проект Vercel переименован пользователем в **`sonyshopkorea`**
+- В **Settings → Domains** добавлен домен **`sonyshopkorea.vercel.app`**
+- **Основная ссылка для клиентов:** https://sonyshopkorea.vercel.app
+- Старые alias (`seora-shop.vercel.app`, `shop-seora.vercel.app` и др.) могут ещё работать, пока не удалены в Domains
+- Короткий `sonyshopkorea.vercel.app` изначально давал 404, пока домен не был добавлен вручную в Domains (переименование проекта ≠ автоматическая привязка домена)
+
+### C. Мобильная вёрстка (фикс «всё плывёт» на телефоне)
+
+**Диагностика:** на ширине 390px горизонтальный скролл ~76px. Причина — шапка: длинное «SonyShopKorea» (`text-2xl` + широкий `letter-spacing`) + 4 иконки с большим padding от `.btn-ghost`.
+
+**Глобально:**
+- `src/app/globals.css` — `overflow-x: hidden` на `html`/`body`; `.container-site`: `min-w-0`, `px-4` на мобильном; новый класс **`.icon-btn`** (компактные круглые кнопки 36–40px)
+- `src/app/layout.tsx` — `export const viewport` (`device-width`, `initialScale: 1`, `viewportFit: cover`); `overflow-x-hidden` на `<body>`
+
+**Шапка** (`src/components/Header.tsx`):
+- Логотип: `text-[15px]` + узкий tracking на мобильном, `truncate`, `min-w-0`
+- Иконки: `.icon-btn` вместо `.btn-ghost`
+- На экранах **≤359px** скрыта иконка «Избранное» (`max-[359px]:hidden`)
+- `overflow-x-hidden` на `<header>`, высота `h-14` на мобильном
+
+**Главная** (`src/app/page.tsx`):
+- Hero: меньший заголовок, меньшие отступы
+- Карточки разделов: `p-5`, заголовки `text-2xl`
+- Полоска категорий: **2 колонки** на мобильном (было 3), `line-clamp-2` на названиях
+- Баннер акции: меньше padding; декоративный `Sparkle` скрыт на мобильном
+- Секции: `mt-16 sm:mt-24`
+
+**Остальные компоненты:**
+- `src/components/Footer.tsx` — одна колонка на мобильном; email с `break-all`
+- `src/components/ProductGrid.tsx` — `min-w-0`, меньшие gap на мобильном
+- `src/components/ProductCard.tsx` — `min-w-0`; кнопка **«В корзину»** на мобильном (`lg:hidden`), т.к. hover-кнопка только на десктопе
+- `src/components/ProductDetail.tsx` — адаптивные заголовки/цены; кнопка «Добавить» на всю ширину на мобильном
+- `src/app/cart/page.tsx` — `min-w-0`, `line-clamp-2` на названиях
+- `src/app/checkout/page.tsx` — `p-4` в карточках секций на мобильном
+- `src/components/CatalogView.tsx` — панель сортировки/фильтров не ломает строку
+- `src/components/SectionHeading.tsx` — ссылка «Смотреть все» видна и на мобильном
+- `src/components/FloatingContacts.tsx` — safe-area insets, чуть меньше кнопка на мобильном
+
+**Деплой мобильных правок:** включены в общий незапушенный diff (сессия 3 + 4).
+
+---
+
+## 11-quater. Четвёртая сессия (июнь 2026) — доработка по ТЗ + редизайн
+
+Источник: PDF «Техническое задание по доработке сайта SonyShopKorea» + пример Excel склада от заказчика.
+
+### A. Excel (главный приоритет ТЗ) — ~80% готово
+
+- Переписан `src/lib/excel.ts`: 4 функции экспорта (см. раздел 9)
+- Админка → вкладка **Excel**: выбор даты, 3 кнопки скачивания
+- Фильтры заказов: страна, доставка, оплата, статус
+
+**Не сделано по ТЗ:**
+- Автоформирование Excel каждый день (cron/scheduled job)
+- Отдельная выгрузка Excel **по конкретному стриму**
+- Колонки «сумма до 3%» / «сумма после 3%» отдельно
+- «Остаток на складе» в `items_total` (колонка пустая)
+
+### B. Главная страница (ТЗ п.3)
+
+- Hero с Higgsfield-фото + градиент, акцент «международная доставка»
+- Блок «О компании», «Что можно купить» (6 категорий), «Почему выбирают нас» (7 пунктов), «Как сделать заказ» (8 шагов)
+- ⚠️ Категории «Одежда», «Обувь», «Товары для дома» — **заглушки** (ведут в `/c/cosmetics`)
+
+### C. Корзина (ТЗ п.4)
+
+- `CartToast.tsx` — уведомление + «Перейти в корзину»
+- Badge на иконке корзины (pulse)
+- Цены в выбранной валюте на карточках (`useDisplayPrice`)
+
+### D. Доставка (ТЗ п.5)
+
+- `src/lib/delivery.ts` + checkout + `/delivery` переписаны под KZ/EU/KR
+
+### E. Стримы (ТЗ п.7) — ~75% готово
+
+- Страницы `/streams`, `/streams/[id]`
+- API `GET/POST /api/streams`, `GET/PATCH/DELETE /api/streams/[id]`
+- Таймер 24ч (`isStreamOpen`, `streamDeadline` в `types.ts`)
+- Админка → вкладка **Стримы**
+- Supabase миграция применена
+
+**Не сделано:** заказ из стрима с `source: stream`; редактирование стрима; отдельная цена/остаток в UI админки после создания
+
+### F. Валюта и язык (ТЗ п.8) — ~60% готово
+
+- `store/preferences.ts`, `LocaleCurrencyBar` в шапке
+- KRW база, +3% при KZT/USD/EUR
+- `i18n.ts` — ~20 ключей (RU/EN/KO), **не весь сайт переведён**
+
+### G. Админка (ТЗ п.9) — ~70% готово
+
+- Фильтры заказов, Excel, стримы
+- **Нет UI:** клиентская база, комментарий админа к заказу
+- Статусы — упрощённый маппинг, не строго 8+3 из ТЗ
+- Редактор товаров: нет SKU, active/out_of_stock в UI
+
+### H. Редизайн
+
+- Новая палитра navy + красный + золото
+- Higgsfield: `public/images/hero-korea.png`, `streams-bg.png`
+- Установлен **taste-skill** для следующих итераций дизайна
+
+### I. Сборка и git
+
+- `npm run build` — **OK** (проверено локально)
+- **Все изменения не закоммичены и не на Vercel**
+- Production https://sonyshopkorea.vercel.app — **старый дизайн** (до сессии 4)
+
+**Закоммитить и задеплоить:**
+```powershell
+git add -A
+git commit -m "feat: доработка по ТЗ — Excel, стримы, валюта, доставка, редизайн"
+git push
+```
+
+---
+
+## 12. Статус ТЗ и следующие шаги
+
+### Готовность по ТЗ (оценка ~70–75%)
+
+| Раздел ТЗ | Статус |
+|-----------|--------|
+| Excel 3 типа | ✅ структура есть; ❌ авто-ежедневный, Excel по стриму, остатки |
+| Главная | ✅ блоки есть; ⚠️ часть категорий — заглушки |
+| Корзина | ✅ |
+| Доставка по странам | ✅ |
+| Стримы + 24ч | ✅; ❌ source=stream при заказе |
+| Валюта KRW + 3% | ✅; ⚠️ статические курсы |
+| Язык RU/EN/KO | ⚠️ переключатель + частичные переводы |
+| Админка | ⚠️ Excel/стримы/фильтры; ❌ клиентская база |
+| Дизайн | ✅ редизайн; можно улучшить через taste-skill |
+
+### Приоритеты (что делать дальше)
+
+1. **git push** — задеплоить всё на Vercel
+2. Excel: выгрузка по стриму, колонки комиссии, остатки склада
+3. Заказы из стрима (`source: stream`, `streamName` в Excel)
+4. Клиентская база в админке
+5. Полный i18n (`next-intl` или расширить `i18n.ts`)
+6. Живые курсы валют
+7. Доработка дизайна через `.agents/skills/design-taste-frontend`
+8. Свой домен, контакты в `site.ts`, Telegram-уведомления
+
+### Ограничения (без изменений)
+
+1. Авторизация клиентов — кастомная (не Supabase Auth)
+2. Категории в `data/categories.ts` (не в БД)
+3. Корзина/избранное — localStorage
+4. Next.js 14.2.5 — security advisory
+5. Контакты в `site.ts` — заглушки
 
 ---
 
 ## 13. Важные технические детали
 
 - Товары: id `p01`, `h01`; добавленные админом — `ap...`. Витрина — `useCatalogProducts()` из `store/catalog.ts`.
-- localStorage ключи: `sonyshopkorea-cart`, `sonyshopkorea-wishlist`, `sonyshopkorea-auth` (только `current`, без пароля). Старые ключи (`seora-*`, `seora-orders`, `seora-catalog`, `seora-admin-auth`) больше не используются — после переименования у текущих пользователей корзина/избранное/сессия обнулятся (читаются новые ключи).
+- **localStorage ключи:** `sonyshopkorea-cart`, `sonyshopkorea-wishlist`, `sonyshopkorea-auth`, `sonyshopkorea-prefs` (locale + currency).
+- **Заказ (TypeScript):** `Order` включает `source`, `streamId`, `streamName`, `currencyCode`, `exchangeRate`, `totalKrw`, `totalConverted`, `feeAmount`, `adminComment`; позиции — `sku`, `priceKrw`, `priceConverted`.
+- **Стрим открыт для заказа:** `Date.now() < endedAt + 24h` — см. `isStreamOpen()` в `types.ts`.
 - Страницы с `useSearchParams` обёрнуты в `<Suspense>`.
-- `scripts/` исключён из `tsconfig.json` (не ломает `next build`).
 - `npm run build` на Windows в песочнице Cursor может не писать `.next` — запускать с полными правами.
-- Supabase MCP в Cursor: авторизация через OAuth; организация `seora`, project ref `tmdakiocltbfjawkdwdw`.
-- **pgcrypto / RPC:** `pgcrypto` живёт в схеме `extensions`. Все RPC, использующие `gen_salt`/`crypt`, должны иметь `set search_path = public, extensions`, иначе — `function gen_salt(unknown) does not exist`.
-- **Адаптивные сетки:** если у `grid ... sm:grid-cols-N` внутри есть `truncate`/`whitespace-nowrap`, обязательно задавать базовый `grid-cols-1` (иначе единственная авто-колонка тянется по содержимому и ломает мобильную ширину). Витринная сетка (`ProductGrid`) уже на `grid-cols-2`.
-- **`backdrop-filter` = containing block:** не вешать `backdrop-blur` на липкую шапку, иначе `position: fixed` оверлеи позиционируются относительно шапки; оверлеи рендерить вне `<header>`.
+- Supabase MCP: project ref `tmdakiocltbfjawkdwdw`.
+- **pgcrypto / RPC:** `search_path = public, extensions` обязателен для `gen_salt`/`crypt`.
+- **Адаптив:** `grid-cols-1` при `truncate`; `ProductGrid` на `grid-cols-2`; `.icon-btn` в шапке; оверлеи вне `<header>`.
+- **Higgsfield MCP** — для генерации hero/фонов; файлы сохранять в `public/images/`.
+- **taste-skill** — `.agents/skills/design-taste-frontend/SKILL.md` при редизайне.
+- Старые ключи `seora-*` больше не используются.
+- **`backdrop-filter` на шапке** — не использовать (ломает fixed-оверлеи); оверлеи вне `<header>`.
+- **`scripts/`** исключён из `tsconfig.json`.
 
 ---
 
 ## 14. Подсказка для нового чата
 
-Проект **уже на Supabase + Vercel + GitHub**. Хорошие следующие задачи:
+Проект **SonyShopKorea** на Next.js + Supabase + Vercel + GitHub.
 
-- «Подключить домен seora.kz к Vercel»
-- «Добавить уведомления в Telegram при новом заказе»
-- «Обновить Next.js до последней безопасной версии»
-- «Перенести категории в Supabase и дать админу их редактировать»
-- «Добавить мультиязычность (рус/каз/кор)»
+- **Production (старый UI):** https://sonyshopkorea.vercel.app
+- **Локально (новый UI + ТЗ):** `npm run dev` → http://localhost:3000
+- **Handoff:** вставьте этот файл целиком или разделы **1–3, 9, 11-quater, 12, 13**
 
-При работе с Supabase — использовать **Supabase MCP** (уже авторизован) и skill `supabase/SKILL.md`.
+### Быстрые команды
+
+```powershell
+cd "c:\Users\nurzh\Projects\каталог корейской косметики"
+npm run dev          # локальный просмотр
+npm run build        # проверка сборки (нужны полные права на Windows)
+git add -A && git commit -m "..." && git push   # деплой на Vercel
+```
+
+### Хорошие следующие задачи
+
+- «Закоммитить и запушить все изменения сессии 4 на Vercel»
+- «Доделать ТЗ: Excel по стриму, source=stream, клиентская база»
+- «Улучшить дизайн через taste-skill (design-taste-frontend)»
+- «Подключить живые курсы валют»
+- «Полный перевод сайта RU/EN/KO»
+
+### Skills и MCP
+
+- **Supabase MCP** — миграции, SQL, логи (`supabase/SKILL.md`)
+- **Higgsfield MCP** — генерация hero/фонов
+- **taste-skill** — `.agents/skills/` (design-taste-frontend, redesign-existing-projects)

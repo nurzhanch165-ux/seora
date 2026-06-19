@@ -3,17 +3,26 @@ import * as I from "./icons";
 
 export type Crumb = { label: string; href?: string };
 
-export function Breadcrumbs({ items }: { items: Crumb[] }) {
+export function Breadcrumbs({ items, light }: { items: Crumb[]; light?: boolean }) {
+  const muted = light ? "text-pearl/60" : "text-muted";
+  const active = light ? "text-pearl" : "text-ink";
+  const hover = light ? "hover:text-white" : "hover:text-accent";
+  const faint = light ? "text-pearl/40" : "text-faint";
+
   return (
-    <nav className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-      <Link href="/" className="hover:text-accent">Главная</Link>
+    <nav className={`flex flex-wrap items-center gap-1.5 text-xs ${muted}`}>
+      <Link href="/" className={hover}>
+        Главная
+      </Link>
       {items.map((c, i) => (
         <span key={i} className="flex items-center gap-1.5">
-          <I.ChevronRight size={13} className="text-faint" />
+          <I.ChevronRight size={13} className={faint} />
           {c.href ? (
-            <Link href={c.href} className="hover:text-accent">{c.label}</Link>
+            <Link href={c.href} className={hover}>
+              {c.label}
+            </Link>
           ) : (
-            <span className="text-ink">{c.label}</span>
+            <span className={active}>{c.label}</span>
           )}
         </span>
       ))}

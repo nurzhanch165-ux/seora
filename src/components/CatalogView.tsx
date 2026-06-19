@@ -174,23 +174,23 @@ export function CatalogView({
       <aside className="hidden lg:block">{Sidebar}</aside>
 
       <div>
-        <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted">
             Найдено <span className="font-medium text-ink">{filtered.length}</span> товаров
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
             <button
               onClick={() => setMobileFilters(true)}
-              className="btn-outline px-4 py-2 text-xs lg:hidden"
+              className="btn-outline px-3 py-2 text-xs lg:hidden"
             >
               <I.Filter size={16} />
               Фильтры{filtersActive ? ` · ${filtersActive}` : ""}
             </button>
-            <div className="relative">
+            <div className="relative min-w-0 flex-1 sm:flex-none">
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="appearance-none rounded-full border border-line bg-surface py-2 pl-4 pr-9 text-xs font-medium text-ink outline-none focus:border-accent"
+                className="w-full min-w-0 appearance-none rounded-full border border-line bg-surface py-2 pl-4 pr-9 text-xs font-medium text-ink outline-none focus:border-accent sm:w-auto"
               >
                 {sortOptions.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>

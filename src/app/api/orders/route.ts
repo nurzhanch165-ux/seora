@@ -38,10 +38,19 @@ export async function POST(req: Request) {
       customer_id: input.customerId ?? null,
       customer: input.customer,
       delivery: input.delivery,
-      total: input.total,
+      total: input.totalConverted ?? input.total,
       comment: input.comment ?? "",
       status: "awaiting_payment",
       payment_confirmed: false,
+      source: input.source ?? "catalog",
+      stream_id: input.streamId ?? null,
+      stream_name: input.streamName ?? null,
+      currency_code: input.currencyCode ?? "KRW",
+      exchange_rate: input.exchangeRate ?? 1,
+      total_krw: input.totalKrw ?? input.total,
+      total_converted: input.totalConverted ?? input.total,
+      fee_amount: input.feeAmount ?? 0,
+      admin_comment: input.adminComment ?? "",
     })
     .select("*")
     .single();
@@ -56,8 +65,11 @@ export async function POST(req: Request) {
     slug: it.slug,
     name: it.name,
     brand: it.brand,
-    price: it.price,
+    price: it.priceKrw ?? it.price,
     qty: it.qty,
+    sku: it.sku ?? it.productId,
+    price_krw: it.priceKrw ?? it.price,
+    price_converted: it.priceConverted ?? it.price,
   }));
   const { error: itemsErr } = await admin.from("order_items").insert(items);
   if (itemsErr) {

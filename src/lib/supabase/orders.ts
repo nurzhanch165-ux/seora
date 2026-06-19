@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Customer, Delivery, Order, OrderItem, OrderStatus } from "@/lib/types";
+import type { Customer, Delivery, Order, OrderItem, OrderSource, OrderStatus } from "@/lib/types";
 
 export const SCREENSHOT_BUCKET = "payment-screenshots";
 
@@ -16,6 +16,15 @@ type OrderRow = {
   payment_screenshot: string | null;
   payment_confirmed: boolean;
   created_at: string;
+  source?: string;
+  stream_id?: string | null;
+  stream_name?: string | null;
+  currency_code?: string;
+  exchange_rate?: number | string | null;
+  total_krw?: number | string | null;
+  total_converted?: number | string | null;
+  fee_amount?: number | string | null;
+  admin_comment?: string;
 };
 
 type OrderItemRow = {
@@ -27,6 +36,9 @@ type OrderItemRow = {
   brand: string;
   price: number | string;
   qty: number;
+  sku?: string;
+  price_krw?: number | string | null;
+  price_converted?: number | string | null;
 };
 
 async function signedScreenshot(
@@ -36,7 +48,7 @@ async function signedScreenshot(
   if (!path) return null;
   const { data } = await admin.storage
     .from(SCREENSHOT_BUCKET)
-    .createSignedUrl(path, 60 * 60); // 1 час
+    .createSignedUrl(path, 60 * 60);
   return data?.signedUrl ?? null;
 }
 
@@ -52,6 +64,9 @@ export async function mapOrderRow(
     brand: it.brand,
     price: Number(it.price) || 0,
     qty: it.qty,
+    sku: it.sku || it.product_id,
+    priceKrw: it.price_krw != null ? Number(it.price_krw) : Number(it.price),
+    priceConverted: it.price_converted != null ? Number(it.price_converted) : Number(it.price),
   }));
   return {
     id: row.id,
@@ -61,14 +76,22 @@ export async function mapOrderRow(
     delivery: row.delivery,
     items,
     total: Number(row.total) || 0,
+    totalKrw: row.total_krw != null ? Number(row.total_krw) : Number(row.total),
+    totalConverted: row.total_converted != null ? Number(row.total_converted) : Number(row.total),
+    currencyCode: row.currency_code ?? "KRW",
+    exchangeRate: row.exchange_rate != null ? Number(row.exchange_rate) : 1,
+    feeAmount: row.fee_amount != null ? Number(row.fee_amount) : 0,
+    source: (row.source as OrderSource) ?? "catalog",
+    streamId: row.stream_id ?? null,
+    streamName: row.stream_name ?? null,
     comment: row.comment ?? "",
+    adminComment: row.admin_comment ?? "",
     status: row.status as OrderStatus,
     paymentScreenshot: await signedScreenshot(admin, row.payment_screenshot),
     paymentConfirmed: row.payment_confirmed,
   };
 }
 
-// Загружает заказы (с позициями) по списку строк orders
 export async function buildOrders(
   admin: SupabaseClient,
   orderRows: OrderRow[]

@@ -53,21 +53,21 @@ export default function CartPage() {
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-3">
             {items.map(({ line, product }) => (
-              <div key={line.productId} className="flex gap-4 rounded-xl2 border border-line bg-surface p-3 sm:p-4">
+              <div key={line.productId} className="flex min-w-0 gap-3 rounded-xl2 border border-line bg-surface p-3 sm:gap-4 sm:p-4">
                 <Link href={`/product/${product!.slug}`} className="shrink-0">
                   <ProductVisual
                     tone={product!.tone}
                     glyph={product!.glyph}
                     image={product!.images?.[0]}
-                    className="h-24 w-24 rounded-xl sm:h-28 sm:w-28"
+                    className="h-20 w-20 rounded-xl sm:h-28 sm:w-28"
                     glyphSize={34}
                   />
                 </Link>
-                <div className="flex flex-1 flex-col">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3">
+                    <div className="min-w-0">
                       <span className="text-[11px] uppercase tracking-wider text-faint">{brandName(product!.brandSlug)}</span>
-                      <Link href={`/product/${product!.slug}`} className="block text-sm leading-snug text-ink hover:text-accent">
+                      <Link href={`/product/${product!.slug}`} className="block line-clamp-2 text-sm leading-snug text-ink hover:text-accent">
                         {product!.name}
                       </Link>
                     </div>
@@ -75,7 +75,7 @@ export default function CartPage() {
                       <I.Trash size={18} />
                     </button>
                   </div>
-                  <div className="mt-auto flex items-center justify-between pt-3">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                     <div className="flex items-center rounded-full border border-line">
                       <button onClick={() => setQty(line.productId, line.qty - 1)} className="flex h-9 w-9 items-center justify-center hover:text-accent" aria-label="Меньше">
                         <I.Minus size={16} />
