@@ -10,12 +10,14 @@ import { useWishlist } from "@/store/wishlist";
 import { useAuth } from "@/store/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { LocaleCurrencyBar } from "./LocaleCurrencyBar";
-import { useT } from "@/hooks/useTranslation";
+import { useT, useLocale } from "@/hooks/useTranslation";
+import { categoryLabel, sectionLabel, subcategoryLabel } from "@/lib/catalogI18n";
 import { Glyph } from "./Glyph";
 import * as I from "./icons";
 
 export function Header() {
   const tr = useT();
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const hydrated = useHydrated();
@@ -95,7 +97,7 @@ export function Header() {
                 Telegram
               </a>
               <Link href="/delivery" className="link-underline hover:text-white">
-                Доставка
+                {tr("nav.delivery")}
               </Link>
             </div>
           </div>
@@ -106,7 +108,7 @@ export function Header() {
             <button
               className="icon-btn -ml-1 shrink-0 lg:hidden"
               onClick={() => setMobileOpen(true)}
-              aria-label="Меню"
+              aria-label={tr("common.menu")}
             >
               <I.Menu />
             </button>
@@ -131,7 +133,7 @@ export function Header() {
                       : "text-ink/70 hover:border-ink/10 hover:bg-ink/5 hover:text-ink"
                   }`}
                 >
-                  {s.name}
+                  {sectionLabel(s.slug, locale)}
                   <I.ChevronDown
                     size={14}
                     className={`shrink-0 transition-transform duration-200 ${mega === s.slug ? "rotate-180" : ""}`}
@@ -146,17 +148,17 @@ export function Header() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-0">
-            <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Поиск">
+            <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label={tr("common.search")}>
               <I.Search />
             </button>
-            <Link href="/account/wishlist" className="icon-btn relative max-[359px]:hidden" aria-label="Избранное">
+            <Link href="/account/wishlist" className="icon-btn relative max-[359px]:hidden" aria-label={tr("common.wishlist")}>
               <I.Heart />
               {hydrated && wishCount > 0 && <Badge>{wishCount}</Badge>}
             </Link>
-            <Link href={currentId ? "/account" : "/login"} className="icon-btn" aria-label="Кабинет">
+            <Link href={currentId ? "/account" : "/login"} className="icon-btn" aria-label={tr("nav.account")}>
               <I.User />
             </Link>
-            <Link href="/cart" className="icon-btn relative" aria-label="Корзина">
+            <Link href="/cart" className="icon-btn relative" aria-label={tr("nav.cart")}>
               <I.Bag />
               {hydrated && cartCount > 0 && <Badge>{cartCount > 99 ? "99+" : cartCount}</Badge>}
             </Link>
@@ -184,7 +186,7 @@ export function Header() {
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-accent">
                         <Glyph name={cat.icon} size={17} />
                       </span>
-                      <span className="link-underline">{cat.name}</span>
+                      <span className="link-underline">{categoryLabel(mega, cat.slug, locale)}</span>
                     </Link>
                     <ul className="space-y-1.5 pl-[46px]">
                       {cat.subs.slice(0, 6).map((sub) => (
@@ -194,7 +196,7 @@ export function Header() {
                             onClick={() => setMega(null)}
                             className="text-[13px] text-muted transition-colors hover:text-accent"
                           >
-                            {sub.name}
+                            {subcategoryLabel(mega, cat.slug, sub.slug, locale)}
                           </Link>
                         </li>
                       ))}
@@ -219,7 +221,7 @@ export function Header() {
                   placeholder={tr("nav.search")}
                   className="w-full bg-transparent py-2 font-display text-lg text-ink outline-none placeholder:text-faint"
                 />
-                <button type="button" className="icon-btn" onClick={() => setSearchOpen(false)} aria-label="Закрыть">
+                <button type="button" className="icon-btn" onClick={() => setSearchOpen(false)} aria-label={tr("common.close")}>
                   <I.Close />
                 </button>
               </form>
@@ -243,6 +245,7 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 function MobileMenu({ onClose }: { onClose: () => void }) {
   const tr = useT();
+  const locale = useLocale();
   const [openSection, setOpenSection] = useState<string | null>(sections[0].slug);
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -250,7 +253,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
       <div className="absolute left-0 top-0 flex h-full w-[88%] max-w-sm flex-col bg-pearl shadow-lift">
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
           <span className="font-display text-base font-semibold">{site.name}</span>
-          <button className="icon-btn" onClick={onClose} aria-label="Закрыть">
+          <button className="icon-btn" onClick={onClose} aria-label={tr("common.close")}>
             <I.Close />
           </button>
         </div>
@@ -261,7 +264,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                 className="flex w-full items-center justify-between py-2 text-left text-base font-medium"
                 onClick={() => setOpenSection(openSection === s.slug ? null : s.slug)}
               >
-                {s.name}
+                {sectionLabel(s.slug, locale)}
                 <I.ChevronDown className={`transition-transform ${openSection === s.slug ? "rotate-180" : ""}`} />
               </button>
               {openSection === s.slug && (
@@ -274,7 +277,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         className="flex items-center gap-2 py-1.5 text-sm text-muted"
                       >
                         <Glyph name={cat.icon} size={16} className="text-accent" />
-                        {cat.name}
+                        {categoryLabel(s.slug, cat.slug, locale)}
                       </Link>
                     </li>
                   ))}

@@ -1,5 +1,6 @@
 import type { Product, Tone } from "@/data/products";
 import type { IconKey } from "@/data/categories";
+import type { ProductI18n } from "@/lib/productI18n";
 
 // Строка таблицы products (snake_case) -> доменный тип Product (camelCase)
 export type ProductRow = {
@@ -33,6 +34,7 @@ export type ProductRow = {
   tags: string[] | null;
   sku?: string | null;
   active?: boolean | null;
+  i18n?: Record<string, unknown> | null;
 };
 
 export function mapProductRow(row: ProductRow): Product {
@@ -68,6 +70,7 @@ export function mapProductRow(row: ProductRow): Product {
     tags: (row.tags as Product["tags"]) ?? [],
     sku: row.sku ?? undefined,
     active: row.active !== false,
+    i18n: (row.i18n as ProductI18n | undefined) ?? undefined,
   };
 }
 
@@ -104,6 +107,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     tags: p.tags ?? [],
     sku: p.sku ?? p.id,
     active: p.active !== false,
+    i18n: p.i18n ?? {},
     updated_at: new Date().toISOString(),
   };
 }

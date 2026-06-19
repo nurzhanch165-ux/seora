@@ -62,10 +62,10 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
 
   return (
     <div className="container-site py-8">
-      <Breadcrumbs items={[{ label: "Стримы", href: "/streams" }, { label: stream.title }]} />
+      <Breadcrumbs items={[{ label: tr("nav.streams"), href: "/streams" }, { label: stream.title }]} />
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="eyebrow mb-2">Стрим · {new Date(stream.stream_date).toLocaleDateString("ru-RU")}</p>
+          <p className="eyebrow mb-2">{tr("stream.label")} · {new Date(stream.stream_date).toLocaleDateString()}</p>
           <h1 className="h-display text-3xl md:text-4xl">{stream.title}</h1>
         </div>
         {open ? (

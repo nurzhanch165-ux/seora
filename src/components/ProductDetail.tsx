@@ -9,22 +9,27 @@ import { formatPrice } from "@/lib/format";
 import { useCart } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { useHydrated } from "@/lib/useHydrated";
+import { useT, useLocale } from "@/hooks/useTranslation";
+import { useLocalizedProduct } from "@/hooks/useLocalizedProduct";
+import { categoryLabel } from "@/lib/catalogI18n";
 import { ProductVisual } from "./ProductVisual";
 import * as I from "./icons";
 
-export function ProductDetail({ product }: { product: Product }) {
+export function ProductDetail({ product: rawProduct }: { product: Product }) {
+  const product = useLocalizedProduct(rawProduct);
   const add = useCart((s) => s.add);
   const toggle = useWishlist((s) => s.toggle);
   const ids = useWishlist((s) => s.ids);
   const hydrated = useHydrated();
   const liked = hydrated && ids.includes(product.id);
+  const tr = useT();
+  const locale = useLocale();
 
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const images = product.images ?? [];
   const [activeImage, setActiveImage] = useState(0);
 
-  const section = getSection(product.sectionSlug);
   const category = getCategory(product.sectionSlug, product.categorySlug);
   const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0;
 
@@ -37,7 +42,6 @@ export function ProductDetail({ product }: { product: Product }) {
   return (
     <>
       <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-10">
-        {/* Gallery */}
         <div className="lg:sticky lg:top-28 lg:self-start">
           <ProductVisual
             tone={product.tone}
@@ -56,12 +60,7 @@ export function ProductDetail({ product }: { product: Product }) {
                   onClick={() => setActiveImage(i)}
                   className={`overflow-hidden rounded-xl border ${i === activeImage ? "border-accent" : "border-line"}`}
                 >
-                  <ProductVisual
-                    tone={product.tone}
-                    glyph={product.glyph}
-                    image={src}
-                    className="aspect-square w-full"
-                  />
+                  <ProductVisual tone={product.tone} glyph={product.glyph} image={src} className="aspect-square w-full" />
                 </button>
               ))}
             </div>
@@ -82,7 +81,6 @@ export function ProductDetail({ product }: { product: Product }) {
           )}
         </div>
 
-        {/* Buy box */}
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:gap-3">
             <Link href={`/brands/${product.brandSlug}`} className="font-medium uppercase tracking-wider text-accent">
@@ -90,7 +88,7 @@ export function ProductDetail({ product }: { product: Product }) {
             </Link>
             {category && (
               <Link href={`/c/${product.sectionSlug}/${product.categorySlug}`} className="text-muted hover:text-ink">
-                {category.name}
+                {categoryLabel(product.sectionSlug, product.categorySlug, locale)}
               </Link>
             )}
           </div>
@@ -104,7 +102,7 @@ export function ProductDetail({ product }: { product: Product }) {
               ))}
             </span>
             <span className="font-medium text-ink">{product.rating.toFixed(1)}</span>
-            <span className="text-faint">· {product.reviews} отзывов</span>
+            <span className="text-faint">· {tr("product.reviews", { count: product.reviews })}</span>
           </div>
 
           <p className="mt-5 text-[15px] leading-relaxed text-muted">{product.shortDescription}</p>
@@ -122,91 +120,87 @@ export function ProductDetail({ product }: { product: Product }) {
           <div className="mt-2 flex items-center gap-2 text-sm">
             {product.stock > 0 ? (
               <span className="flex items-center gap-1.5 text-success">
-                <I.Check size={16} /> В наличии: {product.stock} шт.
+                <I.Check size={16} /> {tr("product.inStock", { count: product.stock })}
               </span>
             ) : (
-              <span className="text-sale">Нет в наличии</span>
+              <span className="text-sale">{tr("product.noStock")}</span>
             )}
           </div>
 
-          {/* qty + add */}
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="flex items-center self-start rounded-full border border-line">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-12 w-12 items-center justify-center text-ink hover:text-accent" aria-label="Меньше">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-12 w-12 items-center justify-center text-ink hover:text-accent" aria-label={tr("product.less")}>
                 <I.Minus size={18} />
               </button>
               <span className="w-10 text-center text-sm font-medium">{qty}</span>
-              <button onClick={() => setQty((q) => Math.min(product.stock, q + 1))} className="flex h-12 w-12 items-center justify-center text-ink hover:text-accent" aria-label="Больше">
+              <button onClick={() => setQty((q) => Math.min(product.stock, q + 1))} className="flex h-12 w-12 items-center justify-center text-ink hover:text-accent" aria-label={tr("product.more")}>
                 <I.Plus size={18} />
               </button>
             </div>
             <button onClick={handleAdd} className="btn-primary h-12 w-full sm:min-w-[200px] sm:flex-1">
               {added ? (
                 <>
-                  <I.Check size={18} /> Добавлено в корзину
+                  <I.Check size={18} /> {tr("product.addedToCart")}
                 </>
               ) : (
                 <>
-                  <I.Bag size={18} /> <span className="truncate">Добавить · {formatPrice(product.price * qty)}</span>
+                  <I.Bag size={18} /> <span className="truncate">{tr("product.addWithPrice", { price: formatPrice(product.price * qty) })}</span>
                 </>
               )}
             </button>
             <button
               onClick={() => toggle(product.id)}
-              aria-label="В избранное"
+              aria-label={tr("product.wishlist")}
               className="flex h-12 w-12 shrink-0 items-center justify-center self-start rounded-full border border-line text-ink transition-colors hover:border-accent hover:text-accent sm:self-auto"
             >
               {liked ? <I.HeartFilled size={20} className="text-accent" /> : <I.Heart size={20} />}
             </button>
           </div>
 
-          {/* assurances */}
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Assurance icon={<I.Shield size={18} />} title="Оригинал" text="Сертификаты качества" />
-            <Assurance icon={<I.Truck size={18} />} title="Доставка" text="По всему миру" />
-            <Assurance icon={<I.Box size={18} />} title="Excel-файл" text="Заказ в один клик" />
+            <Assurance icon={<I.Shield size={18} />} title={tr("product.assurance.original")} text={tr("product.assurance.originalText")} />
+            <Assurance icon={<I.Truck size={18} />} title={tr("product.assurance.delivery")} text={tr("product.assurance.deliveryText")} />
+            <Assurance icon={<I.Box size={18} />} title={tr("product.assurance.excel")} text={tr("product.assurance.excelText")} />
           </div>
 
-          {/* quick facts */}
           <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-xl2 border border-line bg-line text-sm">
-            <Fact label="Объём / количество" value={product.volume} />
-            <Fact label="Граммовка" value={product.weight} />
-            <Fact label="Хватает на" value={product.monthsSupply} />
-            <Fact label="Срок годности" value={product.shelfLife} />
+            <Fact label={tr("product.fact.volume")} value={product.volume} />
+            <Fact label={tr("product.fact.weight")} value={product.weight} />
+            <Fact label={tr("product.fact.monthsSupply")} value={product.monthsSupply} />
+            <Fact label={tr("product.fact.shelfLife")} value={product.shelfLife} />
           </dl>
         </div>
       </div>
 
-      {/* Details */}
       <div className="mt-12 grid min-w-0 gap-6 sm:mt-16 lg:grid-cols-3">
-        <InfoCard title="Описание" icon={<I.Info size={18} />}>
+        <InfoCard title={tr("product.section.description")} icon={<I.Info size={18} />}>
           <p>{product.fullDescription}</p>
         </InfoCard>
-        <InfoCard title="Для чего применяется" icon={<I.Sparkle size={18} />}>
+        <InfoCard title={tr("product.section.usage")} icon={<I.Sparkle size={18} />}>
           <p>{product.usage}</p>
         </InfoCard>
-        <InfoCard title="Ожидаемый результат" icon={<I.Check size={18} />}>
+        <InfoCard title={tr("product.section.result")} icon={<I.Check size={18} />}>
           <p>{product.result}</p>
         </InfoCard>
-        <InfoCard title="Способ применения" icon={<I.Droplet size={18} />}>
+        <InfoCard title={tr("product.section.howToUse")} icon={<I.Droplet size={18} />}>
           <p>{product.howToUse}</p>
         </InfoCard>
 
         <div className="card p-6">
           <h3 className="mb-4 flex items-center gap-2 text-base font-medium">
-            <I.Box size={18} className="text-accent" /> Характеристики
+            <I.Box size={18} className="text-accent" /> {tr("product.section.specs")}
           </h3>
           <dl className="space-y-2.5 text-sm">
-            <SpecRow label="Страна производства" value={product.country} />
-            <SpecRow label="Производитель" value={product.manufacturer} />
-            <SpecRow label="Объём / количество" value={product.volume} />
-            <SpecRow label="Граммовка" value={product.weight} />
-            <SpecRow label="Срок годности" value={product.shelfLife} />
-            <SpecRow label="Рассчитан на" value={product.monthsSupply} />
+            <SpecRow label={tr("product.spec.country")} value={product.country} />
+            <SpecRow label={tr("product.spec.manufacturer")} value={product.manufacturer} />
+            <SpecRow label={tr("product.spec.volume")} value={product.volume} />
+            <SpecRow label={tr("product.spec.weight")} value={product.weight} />
+            <SpecRow label={tr("product.spec.shelfLife")} value={product.shelfLife} />
+            <SpecRow label={tr("product.spec.monthsSupply")} value={product.monthsSupply} />
           </dl>
         </div>
 
-        <InfoCard title="Сертификаты качества" icon={<I.Shield size={18} />}>
+        <InfoCard title={tr("product.section.certificates")} icon={<I.Shield size={18} />}>
           <ul className="space-y-2">
             {product.certificates.map((c) => (
               <li key={c} className="flex items-center gap-2 text-sm">

@@ -4,8 +4,10 @@ import { usePreferences } from "@/store/preferences";
 import { convertFromKrw, formatCurrency, CURRENCIES, type CurrencyCode } from "@/lib/currency";
 import { LOCALES, type Locale } from "@/lib/i18n";
 import { useExchangeRates } from "@/store/exchangeRates";
+import { useT } from "@/hooks/useTranslation";
 
 export function LocaleCurrencyBar({ compact, light }: { compact?: boolean; light?: boolean }) {
+  const tr = useT();
   const locale = usePreferences((s) => s.locale);
   const currency = usePreferences((s) => s.currency);
   const setLocale = usePreferences((s) => s.setLocale);
@@ -21,7 +23,7 @@ export function LocaleCurrencyBar({ compact, light }: { compact?: boolean; light
         value={locale}
         onChange={(e) => setLocale(e.target.value as Locale)}
         className={selectClass}
-        aria-label="Язык"
+        aria-label={tr("common.language")}
       >
         {LOCALES.map((l) => (
           <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
@@ -31,7 +33,7 @@ export function LocaleCurrencyBar({ compact, light }: { compact?: boolean; light
         value={currency}
         onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
         className={selectClass}
-        aria-label="Валюта"
+        aria-label={tr("common.currency")}
       >
         {CURRENCIES.map((c) => (
           <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>

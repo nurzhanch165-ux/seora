@@ -1,17 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { useT } from "@/hooks/useTranslation";
 import * as I from "./icons";
 
 export function SectionHeading({
   eyebrow,
   title,
   href,
-  hrefLabel = "Смотреть все",
+  hrefLabel,
 }: {
   eyebrow?: string;
   title: string;
   href?: string;
   hrefLabel?: string;
 }) {
+  const tr = useT();
+  const linkLabel = hrefLabel ?? tr("common.viewAll");
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
       <div className="min-w-0">
@@ -23,7 +28,7 @@ export function SectionHeading({
           href={href}
           className="group flex shrink-0 items-center gap-1.5 text-sm font-medium text-ink/70 transition-colors hover:text-accent"
         >
-          {hrefLabel}
+          {linkLabel}
           <I.ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
         </Link>
       )}

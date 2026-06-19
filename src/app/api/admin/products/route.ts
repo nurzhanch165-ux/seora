@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { productToRow } from "@/lib/supabase/products";
+import { productFieldsFromProduct } from "@/lib/productI18n";
+import { buildProductI18n } from "@/lib/translate.server";
 import type { Product } from "@/data/products";
 
 export async function POST(req: Request) {
@@ -12,12 +14,22 @@ export async function POST(req: Request) {
   if (!product || !product.id || !product.name) {
     return NextResponse.json({ error: "Некорректные данные товара." }, { status: 400 });
   }
+
+  let i18n = product.i18n;
+  try {
+    i18n = await buildProductI18n(productFieldsFromProduct(product));
+  } catch {
+    i18n = product.i18n;
+  }
+
   const admin = createAdminClient();
-  const { error } = await admin.from("products").upsert(productToRow(product), { onConflict: "id" });
+  const { error } = await admin
+    .from("products")
+    .upsert(productToRow({ ...product, i18n }), { onConflict: "id" });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, i18n });
 }
 
 export async function DELETE(req: Request) {

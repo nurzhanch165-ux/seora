@@ -10,6 +10,8 @@ import { Breadcrumbs, Crumb } from "@/components/Breadcrumbs";
 import { ProductDetail } from "@/components/ProductDetail";
 import { ProductGrid } from "@/components/ProductGrid";
 import { SectionHeading } from "@/components/SectionHeading";
+import { useT, useLocale } from "@/hooks/useTranslation";
+import { sectionLabel, categoryLabel } from "@/lib/catalogI18n";
 
 type Props = { params: { slug: string } };
 
@@ -26,16 +28,18 @@ export default function ProductPage({ params }: Props) {
   const all = useCatalogProducts();
   const product = useMemo(() => all.find((p) => p.slug === params.slug), [all, params.slug]);
   const related = useMemo(() => (product ? getRelated(all, product) : []), [all, product]);
+  const tr = useT();
+  const locale = useLocale();
 
   if (!product) {
     if (!hydrated) {
-      return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
+      return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
     }
     return (
       <div className="container-site py-20 text-center">
-        <h1 className="h-display text-3xl">Товар не найден</h1>
-        <p className="mt-3 text-muted">Возможно, он был удалён или ссылка неверна.</p>
-        <Link href="/c/cosmetics" className="btn-primary mt-6 inline-flex">В каталог</Link>
+        <h1 className="h-display text-3xl">{tr("product.notFound")}</h1>
+        <p className="mt-3 text-muted">{tr("product.notFoundHint")}</p>
+        <Link href="/c/cosmetics" className="btn-primary mt-6 inline-flex">{tr("common.toCatalog")}</Link>
       </div>
     );
   }
@@ -44,8 +48,8 @@ export default function ProductPage({ params }: Props) {
   const category = getCategory(product.sectionSlug, product.categorySlug);
 
   const crumbs: Crumb[] = [];
-  if (section) crumbs.push({ label: section.name, href: `/c/${section.slug}` });
-  if (category) crumbs.push({ label: category.name, href: `/c/${product.sectionSlug}/${product.categorySlug}` });
+  if (section) crumbs.push({ label: sectionLabel(section.slug, locale), href: `/c/${section.slug}` });
+  if (category) crumbs.push({ label: categoryLabel(product.sectionSlug, product.categorySlug, locale), href: `/c/${product.sectionSlug}/${product.categorySlug}` });
   crumbs.push({ label: product.name });
 
   return (
@@ -57,7 +61,7 @@ export default function ProductPage({ params }: Props) {
 
       {related.length > 0 && (
         <section className="mt-24">
-          <SectionHeading eyebrow="Вам также понравится" title="Похожие товары" />
+          <SectionHeading eyebrow={tr("product.related.eyebrow")} title={tr("product.related.title")} />
           <ProductGrid products={related} />
         </section>
       )}

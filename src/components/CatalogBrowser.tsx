@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useCatalogProducts } from "@/store/catalog";
 import { CatalogView, SubLink } from "./CatalogView";
+import { useT } from "@/hooks/useTranslation";
 
 export function CatalogBrowser({
   sectionSlug,
@@ -19,6 +20,7 @@ export function CatalogBrowser({
   subTitle: string;
 }) {
   const all = useCatalogProducts();
+  const tr = useT();
 
   const products = useMemo(() => {
     let list = all.filter((p) => p.sectionSlug === sectionSlug);
@@ -46,10 +48,8 @@ export function CatalogBrowser({
           </ul>
         </aside>
         <div className="card flex flex-col items-center justify-center gap-3 py-24 text-center">
-          <p className="text-lg font-medium text-ink">Скоро здесь появятся товары</p>
-          <p className="max-w-md text-sm text-muted">
-            Мы постоянно добавляем новинки из Кореи. Загляните в соседние категории или напишите менеджеру — поможем с подбором.
-          </p>
+          <p className="text-lg font-medium text-ink">{tr("catalog.comingSoon")}</p>
+          <p className="max-w-md text-sm text-muted">{tr("catalog.comingSoonHint")}</p>
         </div>
       </div>
     );

@@ -5,6 +5,12 @@ import { persist } from "zustand/middleware";
 import type { CurrencyCode } from "@/lib/currency";
 import type { Locale } from "@/lib/i18n";
 
+function syncLocaleCookie(locale: Locale) {
+  if (typeof document === "undefined") return;
+  document.documentElement.lang = locale;
+  document.cookie = `locale=${locale};path=/;max-age=31536000;SameSite=Lax`;
+}
+
 type PreferencesState = {
   locale: Locale;
   currency: CurrencyCode;
@@ -17,9 +23,17 @@ export const usePreferences = create<PreferencesState>()(
     (set) => ({
       locale: "ru",
       currency: "KRW",
-      setLocale: (locale) => set({ locale }),
+      setLocale: (locale) => {
+        syncLocaleCookie(locale);
+        set({ locale });
+      },
       setCurrency: (currency) => set({ currency }),
     }),
-    { name: "sonyshopkorea-prefs" }
+    {
+      name: "sonyshopkorea-prefs",
+      onRehydrateStorage: () => (state) => {
+        if (state?.locale) syncLocaleCookie(state.locale);
+      },
+    }
   )
 );

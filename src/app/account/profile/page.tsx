@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/store/auth";
 import { AccountShell } from "@/components/AccountShell";
+import { useT } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
 export default function ProfilePage() {
   const account = useAuth((s) => s.current);
   const updateProfile = useAuth((s) => s.updateProfile);
   const changePassword = useAuth((s) => s.changePassword);
+  const tr = useT();
 
   const [form, setForm] = useState({
     login: "", lastName: "", firstName: "", middleName: "", country: "", city: "",
@@ -49,7 +51,7 @@ export default function ProfilePage() {
       email: form.email.trim() || undefined,
     });
     if (!res.ok) {
-      setError(res.error ?? "Не удалось сохранить данные.");
+      setError(res.error ?? tr("account.profile.saveFailed"));
       return;
     }
     setSaved(true);
@@ -61,12 +63,12 @@ export default function ProfilePage() {
     setPwdError("");
     setPwdSaved(false);
     if (pwd.next !== pwd.confirm) {
-      setPwdError("Новый пароль и подтверждение не совпадают.");
+      setPwdError(tr("account.profile.passwordsMismatch"));
       return;
     }
     const res = await changePassword(pwd.current, pwd.next);
     if (!res.ok) {
-      setPwdError(res.error ?? "Не удалось изменить пароль.");
+      setPwdError(res.error ?? tr("auth.forgot.changeFailed"));
       return;
     }
     setPwd({ current: "", next: "", confirm: "" });
@@ -75,36 +77,36 @@ export default function ProfilePage() {
   }
 
   return (
-    <AccountShell title="Профиль">
+    <AccountShell title={tr("account.profile")}>
       <div className="space-y-6">
         <form onSubmit={save} className="card space-y-5 p-6 md:p-8">
           <div>
-            <h2 className="text-lg font-medium">Логин и данные</h2>
-            <p className="text-sm text-muted">Логин используется для входа в личный кабинет.</p>
+            <h2 className="text-lg font-medium">{tr("account.profile.loginData")}</h2>
+            <p className="text-sm text-muted">{tr("account.profile.loginHint")}</p>
           </div>
-          <Input label="Логин" value={form.login} onChange={(v) => set("login", v)} />
+          <Input label={tr("auth.field.login")} value={form.login} onChange={(v) => set("login", v)} />
           <div className="grid gap-4 sm:grid-cols-3">
-            <Input label="Фамилия" value={form.lastName} onChange={(v) => set("lastName", v)} />
-            <Input label="Имя" value={form.firstName} onChange={(v) => set("firstName", v)} />
-            <Input label="Отчество" value={form.middleName} onChange={(v) => set("middleName", v)} />
+            <Input label={tr("auth.field.lastName")} value={form.lastName} onChange={(v) => set("lastName", v)} />
+            <Input label={tr("auth.field.firstName")} value={form.firstName} onChange={(v) => set("firstName", v)} />
+            <Input label={tr("auth.field.middleName")} value={form.middleName} onChange={(v) => set("middleName", v)} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Страна" value={form.country} onChange={(v) => set("country", v)} />
-            <Input label="Город" value={form.city} onChange={(v) => set("city", v)} />
+            <Input label={tr("auth.field.country")} value={form.country} onChange={(v) => set("country", v)} />
+            <Input label={tr("auth.field.city")} value={form.city} onChange={(v) => set("city", v)} />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Input label="Телефон" value={form.phone} onChange={(v) => set("phone", v)} />
-            <Input label="WhatsApp" value={form.whatsapp} onChange={(v) => set("whatsapp", v)} />
-            <Input label="Telegram" value={form.telegram} onChange={(v) => set("telegram", v)} />
+            <Input label={tr("auth.field.phone")} value={form.phone} onChange={(v) => set("phone", v)} />
+            <Input label={tr("auth.field.whatsapp")} value={form.whatsapp} onChange={(v) => set("whatsapp", v)} />
+            <Input label={tr("auth.field.telegram")} value={form.telegram} onChange={(v) => set("telegram", v)} />
           </div>
-          <Input label="Email (необязательно)" value={form.email} onChange={(v) => set("email", v)} />
+          <Input label={tr("auth.field.email")} value={form.email} onChange={(v) => set("email", v)} />
 
           {error && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{error}</p>}
           <div className="flex items-center gap-3">
-            <button type="submit" className="btn-primary">Сохранить</button>
+            <button type="submit" className="btn-primary">{tr("common.save")}</button>
             {saved && (
               <span className="flex items-center gap-1.5 text-sm text-success">
-                <I.Check size={16} /> Сохранено
+                <I.Check size={16} /> {tr("common.saved")}
               </span>
             )}
           </div>
@@ -112,20 +114,20 @@ export default function ProfilePage() {
 
         <form onSubmit={savePwd} className="card space-y-5 p-6 md:p-8">
           <div>
-            <h2 className="text-lg font-medium">Смена пароля</h2>
-            <p className="text-sm text-muted">Чтобы изменить пароль, подтвердите текущий.</p>
+            <h2 className="text-lg font-medium">{tr("account.profile.changePassword")}</h2>
+            <p className="text-sm text-muted">{tr("account.profile.changePasswordHint")}</p>
           </div>
-          <Input label="Текущий пароль" type="password" value={pwd.current} onChange={(v) => setPwd((p) => ({ ...p, current: v }))} />
+          <Input label={tr("account.profile.currentPassword")} type="password" value={pwd.current} onChange={(v) => setPwd((p) => ({ ...p, current: v }))} />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Новый пароль" type="password" value={pwd.next} onChange={(v) => setPwd((p) => ({ ...p, next: v }))} />
-            <Input label="Повторите новый пароль" type="password" value={pwd.confirm} onChange={(v) => setPwd((p) => ({ ...p, confirm: v }))} />
+            <Input label={tr("account.profile.newPassword")} type="password" value={pwd.next} onChange={(v) => setPwd((p) => ({ ...p, next: v }))} />
+            <Input label={tr("account.profile.repeatPassword")} type="password" value={pwd.confirm} onChange={(v) => setPwd((p) => ({ ...p, confirm: v }))} />
           </div>
           {pwdError && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{pwdError}</p>}
           <div className="flex items-center gap-3">
-            <button type="submit" className="btn-primary">Изменить пароль</button>
+            <button type="submit" className="btn-primary">{tr("account.profile.changePasswordBtn")}</button>
             {pwdSaved && (
               <span className="flex items-center gap-1.5 text-sm text-success">
-                <I.Check size={16} /> Пароль изменён
+                <I.Check size={16} /> {tr("account.profile.passwordChanged")}
               </span>
             )}
           </div>

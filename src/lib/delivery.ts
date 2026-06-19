@@ -1,4 +1,17 @@
+import { t, type Locale } from "./i18n";
+
 export type DeliveryMethodId = "avia" | "cargo" | "ems" | "domestic";
+
+const METHOD_I18N: Record<DeliveryMethodId, string> = {
+  avia: "delivery.avia",
+  cargo: "delivery.cargo",
+  ems: "delivery.ems",
+  domestic: "delivery.domesticKr",
+};
+
+export function deliveryMethodLabel(id: DeliveryMethodId, locale: Locale): string {
+  return t(METHOD_I18N[id], locale);
+}
 
 export type DeliveryMethod = {
   id: DeliveryMethodId;

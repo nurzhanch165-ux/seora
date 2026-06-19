@@ -31,7 +31,7 @@ export default function CartPage() {
   const saved = totalOld - total;
 
   if (!hydrated) {
-    return <div className="container-site py-20 text-center text-muted">Загрузка корзины…</div>;
+    return <div className="container-site py-20 text-center text-muted">{tr("cart.loading")}</div>;
   }
 
   return (
@@ -48,7 +48,7 @@ export default function CartPage() {
           <p className="max-w-sm text-sm text-muted">{tr("cart.emptyHint")}</p>
           <div className="mt-2 flex gap-3">
             <Link href="/c/cosmetics" className="btn-primary">{tr("cart.toCatalog")}</Link>
-            <Link href="/c/health" className="btn-outline">Всё для здоровья</Link>
+            <Link href="/c/health" className="btn-outline">{tr("cart.healthCategory")}</Link>
           </div>
         </div>
       ) : (
@@ -73,23 +73,23 @@ export default function CartPage() {
                         {product!.name}
                       </Link>
                     </div>
-                    <button onClick={() => remove(line.productId)} className="text-faint transition-colors hover:text-sale" aria-label="Удалить">
+                    <button onClick={() => remove(line.productId)} className="text-faint transition-colors hover:text-sale" aria-label={tr("common.remove")}>
                       <I.Trash size={18} />
                     </button>
                   </div>
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                     <div className="flex items-center rounded-full border border-line">
-                      <button onClick={() => setQty(line.productId, line.qty - 1)} className="flex h-9 w-9 items-center justify-center hover:text-accent" aria-label="Меньше">
+                      <button onClick={() => setQty(line.productId, line.qty - 1)} className="flex h-9 w-9 items-center justify-center hover:text-accent" aria-label={tr("product.less")}>
                         <I.Minus size={16} />
                       </button>
                       <span className="w-8 text-center text-sm font-medium">{line.qty}</span>
-                      <button onClick={() => setQty(line.productId, line.qty + 1)} className="flex h-9 w-9 items-center justify-center hover:text-accent" aria-label="Больше">
+                      <button onClick={() => setQty(line.productId, line.qty + 1)} className="flex h-9 w-9 items-center justify-center hover:text-accent" aria-label={tr("product.more")}>
                         <I.Plus size={16} />
                       </button>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-ink">{formatPrice(product!.price * line.qty)}</p>
-                      <p className="text-xs text-muted">{formatPrice(product!.price)} / шт.</p>
+                      <p className="text-xs text-muted">{tr("cart.perUnit", { price: formatPrice(product!.price) })}</p>
                     </div>
                   </div>
                 </div>
@@ -99,33 +99,33 @@ export default function CartPage() {
 
           <aside className="lg:sticky lg:top-28 lg:self-start">
             <div className="card p-6">
-              <h2 className="text-lg font-medium">Итого</h2>
+              <h2 className="text-lg font-medium">{tr("cart.total")}</h2>
               <dl className="mt-4 space-y-2.5 text-sm">
                 <div className="flex justify-between text-muted">
-                  <dt>Товары ({items.reduce((s, x) => s + x.line.qty, 0)})</dt>
+                  <dt>{tr("cart.items", { count: items.reduce((s, x) => s + x.line.qty, 0) })}</dt>
                   <dd className="text-ink">{formatPrice(totalOld)}</dd>
                 </div>
                 {saved > 0 && (
                   <div className="flex justify-between text-sale">
-                    <dt>Скидка</dt>
+                    <dt>{tr("cart.discount")}</dt>
                     <dd>−{formatPrice(saved)}</dd>
                   </div>
                 )}
                 <div className="flex justify-between border-t border-line pt-3 text-base font-semibold text-ink">
-                  <dt>К оплате</dt>
+                  <dt>{tr("cart.toPay")}</dt>
                   <dd>{formatPrice(total)}</dd>
                 </div>
               </dl>
               <Link href="/checkout" className="btn-primary mt-5 w-full">
-                Перейти к оформлению
+                {tr("cart.checkoutLink")}
                 <I.ArrowRight size={18} />
               </Link>
               <p className="mt-3 text-center text-xs text-muted">
-                После оформления вы получите Excel-файл заказа и реквизиты для оплаты.
+                {tr("cart.afterCheckoutNote")}
               </p>
             </div>
             <Link href="/c/cosmetics" className="mt-3 flex items-center justify-center gap-1.5 text-sm text-muted hover:text-accent">
-              <I.ChevronLeft size={16} /> Продолжить покупки
+              <I.ChevronLeft size={16} /> {tr("cart.continue")}
             </Link>
           </aside>
         </div>

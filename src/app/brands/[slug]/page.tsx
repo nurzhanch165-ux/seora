@@ -1,7 +1,5 @@
-import { notFound } from "next/navigation";
-import { brands, brandName } from "@/data/brands";
-import { BrandProducts } from "@/components/BrandProducts";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { brandName } from "@/data/brands";
+import { BrandPageClient } from "@/components/brands/BrandPageClient";
 
 type Props = { params: { slug: string } };
 
@@ -10,20 +8,5 @@ export function generateMetadata({ params }: Props) {
 }
 
 export default function BrandPage({ params }: Props) {
-  const brand = brands.find((b) => b.slug === params.slug);
-  if (!brand) notFound();
-
-  return (
-    <div className="container-site py-8">
-      <Breadcrumbs items={[{ label: "Бренды", href: "/brands" }, { label: brand.name }]} />
-      <div className="mt-6">
-        <h1 className="h-display text-3xl md:text-4xl">{brand.name}</h1>
-        <p className="mt-2 text-muted">{brand.country}</p>
-      </div>
-
-      <div className="mt-10">
-        <BrandProducts brandSlug={brand.slug} />
-      </div>
-    </div>
-  );
+  return <BrandPageClient slug={params.slug} />;
 }

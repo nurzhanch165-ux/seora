@@ -1,3 +1,5 @@
+import { t, type Locale } from "@/lib/i18n";
+
 export type OrderStatus =
   | "new"
   | "awaiting_payment"
@@ -35,28 +37,48 @@ export const PAYMENT_STATUSES = [
 
 export type OrderSource = "catalog" | "stream";
 
+const LEGACY_STATUS_MAP: Record<string, OrderStatus> = {
+  payment_sent: "awaiting_payment",
+  payment_confirmed: "paid",
+  processing: "collecting",
+  to_warehouse: "collected",
+  packing: "collecting",
+  delivered: "completed",
+  returned: "cancelled",
+};
+
+function normalizeStatus(status: OrderStatus): OrderStatus {
+  return LEGACY_STATUS_MAP[status] ?? status;
+}
+
+export function getStatusLabel(status: OrderStatus, locale: Locale): string {
+  const normalized = normalizeStatus(status);
+  const key = `order.status.${normalized}`;
+  const label = t(key, locale);
+  return label === key ? status : label;
+}
+
+/** @deprecated use getStatusLabel(status, locale) */
 export function statusLabel(status: OrderStatus): string {
-  const legacy: Record<string, string> = {
-    payment_sent: "Ожидает оплату",
-    payment_confirmed: "Оплачен",
-    processing: "Собирается",
-    to_warehouse: "Собран",
-    packing: "Собирается",
-    delivered: "Завершён",
-    returned: "Отменён",
-  };
-  if (legacy[status]) return legacy[status];
-  return ORDER_STATUSES.find((s) => s.value === status)?.label ?? status;
+  return getStatusLabel(status, "ru");
 }
 
 export function statusTone(status: OrderStatus): string {
   return ORDER_STATUSES.find((s) => s.value === status)?.tone ?? "bg-sand text-ink";
 }
 
+export function getPaymentStatusLabel(
+  order: { paymentConfirmed: boolean; status: OrderStatus },
+  locale: Locale
+): string {
+  if (order.status === "cancelled" || order.status === "returned") return t("order.payment.cancelled", locale);
+  if (order.paymentConfirmed) return t("order.payment.paid", locale);
+  return t("order.payment.awaiting", locale);
+}
+
+/** @deprecated use getPaymentStatusLabel(order, locale) */
 export function paymentStatusLabel(order: { paymentConfirmed: boolean; status: OrderStatus }): string {
-  if (order.status === "cancelled" || order.status === "returned") return "Отменено";
-  if (order.paymentConfirmed) return "Оплачено";
-  return "Ожидает оплату";
+  return getPaymentStatusLabel(order, "ru");
 }
 
 export type Customer = {

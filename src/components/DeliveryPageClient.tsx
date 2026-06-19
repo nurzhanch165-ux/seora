@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { site } from "@/data/site";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useT } from "@/hooks/useTranslation";
+import { useT, useSiteText } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
 export function DeliveryPageClient() {
   const tr = useT();
+  const trSite = useSiteText();
 
   const steps = [
     { n: "01", title: tr("delivery.step1.title"), text: tr("delivery.step1.text") },
@@ -20,7 +20,7 @@ export function DeliveryPageClient() {
     <div className="container-site py-8">
       <Breadcrumbs items={[{ label: tr("delivery.breadcrumb") }]} />
       <h1 className="mt-6 h-display text-3xl md:text-4xl">{tr("delivery.title")}</h1>
-      <p className="mt-2 max-w-2xl text-muted">{site.shippingNote}</p>
+      <p className="mt-2 max-w-2xl text-muted">{trSite("shippingNote")}</p>
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((s) => (
@@ -37,28 +37,25 @@ export function DeliveryPageClient() {
           flag="KZ"
           title={tr("delivery.kz")}
           methods={[
-            { name: tr("delivery.avia"), price: "9 $/кг", desc: "Быстрая авиадоставка" },
-            { name: tr("delivery.cargo"), price: "4 $/кг", desc: "Экономичная карго-доставка" },
+            { name: tr("delivery.avia"), price: tr("delivery.pricePerKg", { price: "9" }), desc: tr("delivery.aviaDesc") },
+            { name: tr("delivery.cargo"), price: tr("delivery.pricePerKg", { price: "4" }), desc: tr("delivery.cargoDesc") },
           ]}
         />
         <CountryCard
           flag="EU"
           title={tr("delivery.eu")}
-          methods={[{ name: tr("delivery.ems"), price: "EMS", desc: "Почта Южной Кореи" }]}
+          methods={[{ name: tr("delivery.ems"), price: "EMS", desc: tr("delivery.emsDesc") }]}
         />
         <CountryCard
           flag="KR"
           title={tr("delivery.kr")}
-          methods={[{ name: tr("delivery.domestic"), price: "—", desc: "Доставка внутри страны" }]}
+          methods={[{ name: tr("delivery.domestic"), price: "—", desc: tr("delivery.domesticDesc") }]}
         />
       </div>
 
       <div className="mt-12 card p-6 md:p-8">
-        <h2 className="text-lg font-medium text-ink">Оплата</h2>
-        <p className="mt-2 text-sm text-muted">
-          Оплата по банковским реквизитам. После оформления заказа вы получите Excel-файл и инструкции.
-          Загрузите скриншот оплаты в личном кабинете.
-        </p>
+        <h2 className="text-lg font-medium text-ink">{tr("delivery.paymentTitle")}</h2>
+        <p className="mt-2 text-sm text-muted">{tr("delivery.paymentText")}</p>
         <Link href="/checkout" className="btn-primary mt-4 inline-flex">
           {tr("cart.checkout")}
           <I.ArrowRight size={18} />

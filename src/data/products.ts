@@ -1,4 +1,5 @@
 import { IconKey } from "./categories";
+import type { ProductI18n } from "@/lib/productI18n";
 
 export type Tone = "rose" | "sand" | "sage" | "clay" | "sky" | "plum" | "amber" | "mist";
 
@@ -33,6 +34,7 @@ export type Product = {
   tags: ("new" | "hit" | "sale")[];
   sku?: string;
   active?: boolean;
+  i18n?: ProductI18n;
 };
 
 const CERT_COSMETIC = ["CGMP Korea", "Сертификат соответствия", "Дерматологический контроль"];

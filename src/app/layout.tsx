@@ -6,7 +6,9 @@ import { Footer } from "@/components/Footer";
 import { FloatingContacts } from "@/components/FloatingContacts";
 import { CartToast } from "@/components/CartToast";
 import { ExchangeRatesLoader } from "@/components/ExchangeRatesLoader";
+import { LocaleSync } from "@/components/LocaleSync";
 import { site } from "@/data/site";
+import { t } from "@/lib/i18n";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"],
@@ -24,10 +26,10 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: `${site.name} — корейская косметика и здоровье`,
+    default: t("site.defaultTitle", "ru", { name: site.name }),
     template: `%s · ${site.name}`,
   },
-  description: site.description,
+  description: t("site.description", "ru"),
 };
 
 export const viewport = {
@@ -47,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <FloatingContacts />
         <CartToast />
         <ExchangeRatesLoader />
+        <LocaleSync />
       </body>
     </html>
   );

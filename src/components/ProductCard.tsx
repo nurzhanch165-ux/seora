@@ -8,6 +8,7 @@ import { useWishlist } from "@/store/wishlist";
 import { useCartToast } from "@/store/cartToast";
 import { useHydrated } from "@/lib/useHydrated";
 import { useT } from "@/hooks/useTranslation";
+import { useLocalizedProduct } from "@/hooks/useLocalizedProduct";
 import { useDisplayPrice } from "@/components/LocaleCurrencyBar";
 import { ProductVisual } from "./ProductVisual";
 import * as I from "./icons";
@@ -19,7 +20,8 @@ type Props = {
   onAdd?: () => void;
 };
 
-export function ProductCard({ product, streamClosed, streamContext, onAdd }: Props) {
+export function ProductCard({ product: rawProduct, streamClosed, streamContext, onAdd }: Props) {
+  const product = useLocalizedProduct(rawProduct);
   const add = useCart((s) => s.add);
   const showToast = useCartToast((s) => s.show);
   const toggle = useWishlist((s) => s.toggle);
@@ -54,7 +56,7 @@ export function ProductCard({ product, streamClosed, streamContext, onAdd }: Pro
         </Link>
 
         <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-          {product.tags.includes("new") && <span className="tag">Новинка</span>}
+          {product.tags.includes("new") && <span className="tag">{tr("product.tag.new")}</span>}
           {discount > 0 && (
             <span className="inline-flex rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
               −{discount}%
@@ -69,7 +71,7 @@ export function ProductCard({ product, streamClosed, streamContext, onAdd }: Pro
 
         <button
           onClick={() => toggle(product.id)}
-          aria-label="В избранное"
+          aria-label={tr("product.wishlist")}
           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-ink shadow-soft transition-all hover:text-accent active:scale-95"
         >
           {liked ? <I.HeartFilled size={18} className="text-accent" /> : <I.Heart size={18} />}

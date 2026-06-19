@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { sections } from "@/data/categories";
 import { site } from "@/data/site";
-import { useT } from "@/hooks/useTranslation";
+import { useT, useLocale, useSiteText } from "@/hooks/useTranslation";
+import { sectionLabel, categoryLabel } from "@/lib/catalogI18n";
 import * as I from "./icons";
 
 export function Footer() {
   const tr = useT();
+  const trSite = useSiteText();
+  const locale = useLocale();
+
   return (
     <footer className="mt-8 border-t border-line bg-surface">
       <div className="container-site grid min-w-0 grid-cols-1 gap-10 py-14 sm:grid-cols-2 sm:py-16 md:grid-cols-4 lg:grid-cols-5">
@@ -18,7 +22,7 @@ export function Footer() {
             </span>
             <span className="font-display text-lg font-semibold tracking-tight">{site.name}</span>
           </div>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{site.description}</p>
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{trSite("description")}</p>
           <div className="mt-6 flex items-center gap-2">
             <Social href={site.contacts.whatsappLink} label="WhatsApp">
               <I.Whatsapp size={18} />
@@ -40,7 +44,7 @@ export function Footer() {
 
         {sections.map((s) => (
           <div key={s.slug}>
-            <h4 className="mb-4 font-display text-sm font-semibold text-ink">{s.name}</h4>
+            <h4 className="mb-4 font-display text-sm font-semibold text-ink">{sectionLabel(s.slug, locale)}</h4>
             <ul className="space-y-2.5">
               {s.categories.slice(0, 6).map((c) => (
                 <li key={c.slug}>
@@ -48,13 +52,13 @@ export function Footer() {
                     href={`/c/${s.slug}/${c.slug}`}
                     className="text-sm text-muted transition-colors hover:text-accent"
                   >
-                    {c.name}
+                    {categoryLabel(s.slug, c.slug, locale)}
                   </Link>
                 </li>
               ))}
               <li>
                 <Link href={`/c/${s.slug}`} className="text-sm font-medium text-accent">
-                  Все категории
+                  {tr("footer.allCategories")}
                 </Link>
               </li>
             </ul>
@@ -62,43 +66,19 @@ export function Footer() {
         ))}
 
         <div>
-          <h4 className="mb-4 font-display text-sm font-semibold text-ink">Покупателям</h4>
+          <h4 className="mb-4 font-display text-sm font-semibold text-ink">{tr("footer.buyers")}</h4>
           <ul className="space-y-2.5 text-sm text-muted">
-            <li>
-              <Link href="/delivery" className="hover:text-accent">
-                Доставка и оплата
-              </Link>
-            </li>
-            <li>
-              <Link href="/about" className="hover:text-accent">
-                О компании
-              </Link>
-            </li>
-            <li>
-              <Link href="/sale" className="hover:text-accent">
-                Акции и скидки
-              </Link>
-            </li>
-            <li>
-              <Link href="/streams" className="hover:text-accent">
-                Стримы
-              </Link>
-            </li>
-            <li>
-              <Link href="/contacts" className="hover:text-accent">
-                Контакты
-              </Link>
-            </li>
-            <li>
-              <Link href="/login" className="hover:text-accent">
-                Личный кабинет
-              </Link>
-            </li>
+            <li><Link href="/delivery" className="hover:text-accent">{tr("footer.deliveryPay")}</Link></li>
+            <li><Link href="/about" className="hover:text-accent">{tr("footer.about")}</Link></li>
+            <li><Link href="/sale" className="hover:text-accent">{tr("footer.sale")}</Link></li>
+            <li><Link href="/streams" className="hover:text-accent">{tr("nav.streams")}</Link></li>
+            <li><Link href="/contacts" className="hover:text-accent">{tr("footer.contacts")}</Link></li>
+            <li><Link href="/login" className="hover:text-accent">{tr("footer.account")}</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-4 font-display text-sm font-semibold text-ink">Контакты</h4>
+          <h4 className="mb-4 font-display text-sm font-semibold text-ink">{tr("footer.contacts")}</h4>
           <ul className="space-y-3 text-sm text-muted">
             <li className="flex items-center gap-2">
               <I.Whatsapp size={16} className="text-accent" />
@@ -122,12 +102,8 @@ export function Footer() {
 
       <div className="border-t border-line">
         <div className="container-site flex flex-col items-center justify-between gap-3 py-6 text-center text-xs text-faint md:flex-row md:text-left">
-          <span>
-            © {new Date().getFullYear()} {site.name}. Все права защищены.
-          </span>
-          <span className="max-w-md leading-relaxed">
-            Согласие на обработку персональных данных · Политика конфиденциальности
-          </span>
+          <span>{tr("footer.copyright", { year: new Date().getFullYear(), name: site.name })}</span>
+          <span className="max-w-md leading-relaxed">{tr("footer.privacy")}</span>
         </div>
       </div>
     </footer>
