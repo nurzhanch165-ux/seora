@@ -12,6 +12,7 @@
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
   }
 
   body {

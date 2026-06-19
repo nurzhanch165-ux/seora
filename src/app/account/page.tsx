@@ -88,7 +88,7 @@ export default function AccountOrdersPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button onClick={() => exportOrderExcel(order)} className="btn-outline text-sm">
+                      <button onClick={() => void exportOrderExcel(order)} className="btn-outline text-sm">
                         <I.Download size={16} /> Excel-файл заказа
                       </button>
                     </div>

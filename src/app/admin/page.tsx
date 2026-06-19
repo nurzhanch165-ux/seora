@@ -5,17 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/store/adminAuth";
 import { useOrders } from "@/store/orders";
-import { useCatalog, useCatalogProducts } from "@/store/catalog";
+import { useCatalog } from "@/store/catalog";
 import { Product } from "@/data/products";
 import { brandName } from "@/data/brands";
 import { formatPrice, formatDateShort } from "@/lib/format";
 import { ORDER_STATUSES, OrderStatus } from "@/lib/types";
 import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportItemsTotalExcel } from "@/lib/excel";
+import { buildStreamPositionMap, type StreamPositionMap } from "@/lib/excelCore";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ProductEditor } from "@/components/admin/ProductEditor";
+import { StreamEditor } from "@/components/admin/StreamEditor";
 import * as I from "@/components/icons";
 
-type Tab = "orders" | "warehouse" | "products" | "streams";
+type Tab = "orders" | "warehouse" | "products" | "streams" | "customers";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -26,14 +28,19 @@ export default function AdminPage() {
   const loadAll = useOrders((s) => s.loadAll);
   const [tab, setTab] = useState<Tab>("orders");
 
+  const loadCatalog = useCatalog((s) => s.load);
+
   useEffect(() => {
     check();
   }, [check]);
 
   useEffect(() => {
     if (ready && !loggedIn) router.replace("/admin/login");
-    if (ready && loggedIn) loadAll();
-  }, [ready, loggedIn, router, loadAll]);
+    if (ready && loggedIn) {
+      loadAll();
+      loadCatalog();
+    }
+  }, [ready, loggedIn, router, loadAll, loadCatalog]);
 
   if (!ready) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
   if (!loggedIn) return <div className="container-site py-20 text-center text-muted">Перенаправление на страницу входа…</div>;
@@ -44,11 +51,11 @@ export default function AdminPage() {
         <h1 className="h-display text-3xl md:text-4xl">Администратор</h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 rounded-full border border-line bg-surface p-1">
-            {([["orders", "Заказы"], ["warehouse", "Excel"], ["products", "Товары"], ["streams", "Стримы"]] as [Tab, string][]).map(([t, label]) => (
+            {([["orders", "Заказы"], ["warehouse", "Excel"], ["products", "Товары"], ["streams", "Стримы"], ["customers", "Клиенты"]] as [Tab, string][]).map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`rounded-full px-4 py-2 text-sm transition-colors ${tab === t ? "bg-ink text-paper" : "text-muted hover:text-ink"}`}
+                className={`rounded-full px-4 py-2 text-sm transition-colors ${tab === t ? "bg-ink text-pearl" : "text-muted hover:text-ink"}`}
               >
                 {label}
               </button>
@@ -68,6 +75,7 @@ export default function AdminPage() {
         {tab === "warehouse" && <WarehouseAdmin />}
         {tab === "products" && <ProductsAdmin />}
         {tab === "streams" && <StreamsAdmin />}
+        {tab === "customers" && <CustomersAdmin />}
       </div>
     </div>
   );
@@ -77,6 +85,7 @@ function OrdersAdmin() {
   const orders = useOrders((s) => s.orders);
   const setStatus = useOrders((s) => s.setStatus);
   const confirmPayment = useOrders((s) => s.confirmPayment);
+  const updateAdminComment = useOrders((s) => s.updateAdminComment);
   const [openId, setOpenId] = useState<string | null>(null);
   const [filterCountry, setFilterCountry] = useState("");
   const [filterDelivery, setFilterDelivery] = useState("");
@@ -137,6 +146,9 @@ function OrdersAdmin() {
                     <p className="font-medium text-ink">{order.number}</p>
                     <p className="text-xs text-muted">
                       {formatDateShort(order.createdAt)} · {order.customer.lastName} {order.customer.firstName} · {formatPrice(order.total)}
+                      {order.source === "stream" && (
+                        <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-accent">стрим</span>
+                      )}
                     </p>
                   </div>
                 </button>
@@ -181,8 +193,21 @@ function OrdersAdmin() {
                       <Row label="Способ" value={order.delivery.method} />
                     </dl>
                     {order.comment && (
-                      <p className="mt-3 rounded-lg bg-paper px-3 py-2 text-xs text-muted">Комментарий: {order.comment}</p>
+                      <p className="mt-3 rounded-lg bg-paper px-3 py-2 text-xs text-muted">Комментарий клиента: {order.comment}</p>
                     )}
+                    <div className="mt-4">
+                      <label className="field-label">Комментарий администратора</label>
+                      <textarea
+                        defaultValue={order.adminComment ?? ""}
+                        rows={2}
+                        className="field mt-1 text-sm"
+                        onBlur={async (e) => {
+                          const value = e.target.value;
+                          if (value === (order.adminComment ?? "")) return;
+                          await updateAdminComment(order.id, value);
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -207,7 +232,7 @@ function OrdersAdmin() {
                       <p className="text-sm text-muted">Скриншот ещё не загружен клиентом.</p>
                     )}
 
-                    <button onClick={() => exportOrderExcel(order)} className="btn-outline mt-4 text-sm">
+                    <button onClick={() => void exportOrderExcel(order)} className="btn-outline mt-4 text-sm">
                       <I.Download size={16} /> Excel заказа
                     </button>
                   </div>
@@ -223,9 +248,51 @@ function OrdersAdmin() {
 
 function WarehouseAdmin() {
   const orders = useOrders((s) => s.orders);
+  const products = useCatalog((s) => s.products);
   const [from, setFrom] = useState(new Date().toISOString().slice(0, 10));
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
   const [paidOnly, setPaidOnly] = useState(false);
+  const [streamId, setStreamId] = useState("");
+  const [streams, setStreams] = useState<{ id: string; title: string }[]>([]);
+  const [streamPositions, setStreamPositions] = useState<StreamPositionMap>({});
+  const [autoExports, setAutoExports] = useState<{ name: string; path: string; url: string | null; createdAt?: string }[]>([]);
+  const [exportMsg, setExportMsg] = useState("");
+
+  useEffect(() => {
+    fetch("/api/streams")
+      .then((r) => r.json())
+      .then(async (j) => {
+        const list: { id: string; title: string }[] = j.streams ?? [];
+        setStreams(list);
+        const map: StreamPositionMap = {};
+        await Promise.all(
+          list.map(async (stream) => {
+            const detail = await fetch(`/api/streams/${stream.id}`).then((r) => r.json());
+            (detail.products ?? []).forEach((p: { id: string; position?: number }, i: number) => {
+              map[`${stream.id}:${p.id}`] = (p.position ?? i) + 1;
+            });
+          })
+        );
+        setStreamPositions(map);
+      });
+    fetch("/api/admin/exports").then((r) => r.json()).then((j) => setAutoExports(j.files ?? []));
+  }, []);
+
+  async function runAutoExport() {
+    setExportMsg("");
+    const res = await fetch("/api/admin/exports", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const j = await res.json();
+    if (!res.ok) { setExportMsg(j.error ?? "Ошибка"); return; }
+    setExportMsg(`Сформировано: ${j.orderCount} заказов за ${j.date}`);
+    const list = await fetch("/api/admin/exports").then((r) => r.json());
+    setAutoExports(list.files ?? []);
+  }
+
+  const stockByProductId = useMemo(() => {
+    const map: Record<string, number> = {};
+    products.forEach((p) => { map[p.id] = p.stock; });
+    return map;
+  }, [products]);
 
   function preset(days: number) {
     const now = new Date();
@@ -238,21 +305,25 @@ function WarehouseAdmin() {
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       if (paidOnly && !o.paymentConfirmed) return false;
+      if (streamId && o.streamId !== streamId) return false;
       const d = o.createdAt.slice(0, 10);
       if (from && d < from) return false;
       if (to && d > to) return false;
       return true;
     });
-  }, [orders, from, to, paidOnly]);
+  }, [orders, from, to, paidOnly, streamId]);
 
   const dateLabel = from === to ? from.replace(/-/g, "_") : `${from}_${to}`;
+  const streamSuffix = streamId
+    ? streams.find((s) => s.id === streamId)?.title.replace(/\s+/g, "_").slice(0, 40) ?? "stream"
+    : undefined;
 
   return (
     <div className="space-y-6">
       <div className="card p-6 md:p-8">
         <h2 className="text-lg font-medium">Excel-файлы для склада</h2>
         <p className="mt-1 text-sm text-muted">
-          Три типа файлов по ТЗ: общий за день, количество товаров, формат склада.
+          Основной файл — формат склада (RU/KR, ₩, адрес, доставка). Дополнительно: детальный отчёт и сводка по товарам.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-2">
@@ -272,6 +343,16 @@ function WarehouseAdmin() {
           </div>
         </div>
 
+        <div className="mt-4">
+          <label className="field-label">Стрим (необязательно)</label>
+          <select value={streamId} onChange={(e) => setStreamId(e.target.value)} className="field max-w-md">
+            <option value="">Все заказы (каталог + стримы)</option>
+            {streams.map((s) => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
+          </select>
+        </div>
+
         <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm text-muted">
           <input type="checkbox" checked={paidOnly} onChange={(e) => setPaidOnly(e.target.checked)} className="h-4 w-4 accent-accent" />
           Только оплаченные заказы
@@ -280,24 +361,60 @@ function WarehouseAdmin() {
         <p className="mt-4 text-sm text-muted">К выгрузке: <span className="font-medium text-ink">{filtered.length}</span> заказов</p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <button onClick={() => exportDailyOrdersExcel(filtered, dateLabel)} disabled={filtered.length === 0} className="btn-primary text-sm">
-            <I.Download size={16} /> orders_{dateLabel}.xlsx
+          <button
+            onClick={() => exportWarehouseExcel(filtered, dateLabel, { streamPositions, fileSuffix: streamSuffix })}
+            disabled={filtered.length === 0}
+            className="btn-primary text-sm"
+          >
+            <I.Download size={16} /> warehouse_{dateLabel}{streamSuffix ? `_${streamSuffix}` : ""}.xlsx
           </button>
-          <button onClick={() => exportItemsTotalExcel(filtered)} disabled={filtered.length === 0} className="btn-outline text-sm">
+          <button
+            onClick={() => exportDailyOrdersExcel(filtered, dateLabel, streamSuffix)}
+            disabled={filtered.length === 0}
+            className="btn-outline text-sm"
+          >
+            <I.Download size={16} /> orders_{dateLabel}{streamSuffix ? `_${streamSuffix}` : ""}.xlsx
+          </button>
+          <button
+            onClick={() => exportItemsTotalExcel(filtered, { dateLabel, stockByProductId, fileSuffix: streamSuffix })}
+            disabled={filtered.length === 0}
+            className="btn-outline text-sm"
+          >
             <I.Download size={16} /> items_total
           </button>
-          <button onClick={() => exportWarehouseExcel(filtered, dateLabel)} disabled={filtered.length === 0} className="btn-outline text-sm">
-            <I.Download size={16} /> Формат склада
-          </button>
         </div>
+      </div>
+
+      <div className="card p-6 md:p-8">
+        <h2 className="text-lg font-medium">Авто-Excel (ежедневно по cron)</h2>
+        <p className="mt-1 text-sm text-muted">
+          Vercel Cron в 15:00 UTC формирует orders_*, items_total_* и warehouse_* за текущий день (KST). Можно запустить вручную.
+        </p>
+        <button onClick={runAutoExport} className="btn-outline mt-4 text-sm">Сформировать за сегодня</button>
+        {exportMsg && <p className="mt-3 text-sm text-accent">{exportMsg}</p>}
+        {autoExports.length > 0 && (
+          <ul className="mt-4 space-y-2 text-sm">
+            {autoExports.map((f) => (
+              <li key={f.path} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-pearl px-3 py-2">
+                <span className="text-ink">{f.name}</span>
+                {f.url ? (
+                  <a href={f.url} className="text-accent hover:underline" download>Скачать</a>
+                ) : (
+                  <span className="text-muted">—</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
 }
 
 function StreamsAdmin() {
-  const all = useCatalogProducts();
+  const all = useCatalog((s) => s.products);
   const [streams, setStreams] = useState<{ id: string; title: string; stream_date: string; ended_at: string }[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [streamDate, setStreamDate] = useState(new Date().toISOString().slice(0, 10));
   const [endedAt, setEndedAt] = useState(new Date().toISOString().slice(0, 16));
@@ -326,6 +443,19 @@ function StreamsAdmin() {
     setTitle("");
     setSelectedProducts([]);
     setMsg("Стрим создан");
+  }
+
+  if (editId) {
+    return (
+      <StreamEditor
+        streamId={editId}
+        catalog={all}
+        onClose={() => setEditId(null)}
+        onSaved={() => {
+          fetch("/api/streams").then((r) => r.json()).then((j) => setStreams(j.streams ?? []));
+        }}
+      />
+    );
   }
 
   return (
@@ -363,7 +493,10 @@ function StreamsAdmin() {
                 <p className="font-medium">{s.title}</p>
                 <p className="text-xs text-muted">{s.stream_date}</p>
               </div>
-              <Link href={`/streams/${s.id}`} className="btn-outline px-3 py-1.5 text-xs">Открыть</Link>
+              <div className="flex gap-2">
+                <button onClick={() => setEditId(s.id)} className="btn-outline px-3 py-1.5 text-xs">Редактировать</button>
+                <Link href={`/streams/${s.id}`} className="btn-outline px-3 py-1.5 text-xs">Открыть</Link>
+              </div>
             </div>
           ))}
         </div>
@@ -373,7 +506,7 @@ function StreamsAdmin() {
 }
 
 function ProductsAdmin() {
-  const all = useCatalogProducts();
+  const all = useCatalog((s) => s.products);
   const addProduct = useCatalog((s) => s.addProduct);
   const updateProduct = useCatalog((s) => s.updateProduct);
   const removeProduct = useCatalog((s) => s.removeProduct);
@@ -467,7 +600,7 @@ function ProductsAdmin() {
             <div className="flex min-w-0 flex-1 flex-col">
               <p className="truncate text-sm font-medium text-ink">{p.name}</p>
               <p className="text-xs text-muted">{brandName(p.brandSlug)}</p>
-              <p className="mt-0.5 text-xs text-muted">{formatPrice(p.price)} · остаток {p.stock}</p>
+              <p className="mt-0.5 text-xs text-muted">{formatPrice(p.price)} · остаток {p.stock}{p.active === false ? " · скрыт" : ""}</p>
               <div className="mt-auto flex gap-2 pt-2">
                 <button onClick={() => setMode(p.id)} className="btn-outline px-3 py-1.5 text-xs">
                   <I.Edit size={14} /> Изменить
@@ -488,6 +621,158 @@ function ProductsAdmin() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CustomersAdmin() {
+  type AdminCustomer = {
+    id: string;
+    login: string;
+    lastName: string;
+    firstName: string;
+    middleName: string;
+    country: string;
+    city: string;
+    phone: string;
+    whatsapp: string;
+    telegram: string;
+    email?: string | null;
+    zip: string;
+    address: string;
+    adminComment: string;
+    createdAt: string;
+    orderCount: number;
+    orders: { id: string; number: string; createdAt: string; status: string; paymentConfirmed: boolean; total: number }[];
+  };
+
+  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/customers")
+      .then((r) => r.json())
+      .then((j) => setCustomers(j.customers ?? []))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return customers;
+    return customers.filter((c) =>
+      `${c.lastName} ${c.firstName} ${c.login} ${c.phone} ${c.city}`.toLowerCase().includes(q)
+    );
+  }, [customers, query]);
+
+  async function saveComment(id: string, adminComment: string) {
+    const res = await fetch(`/api/admin/customers/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adminComment }),
+    });
+    const j = await res.json();
+    if (!res.ok) {
+      setMsg(j.error ?? "Не удалось сохранить комментарий.");
+      return;
+    }
+    setCustomers((list) => list.map((c) => (c.id === id ? { ...c, adminComment } : c)));
+    setMsg("");
+  }
+
+  if (loading) return <div className="card py-20 text-center text-muted">Загрузка клиентов…</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-medium">Клиентская база · {customers.length}</h2>
+          <p className="text-sm text-muted">Контакты и история заказов зарегистрированных клиентов.</p>
+        </div>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Поиск по имени, логину, телефону…"
+          className="field max-w-sm"
+        />
+      </div>
+
+      {msg && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{msg}</p>}
+
+      {filtered.length === 0 ? (
+        <div className="card py-16 text-center text-muted">Клиентов не найдено.</div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((c) => {
+            const open = openId === c.id;
+            return (
+              <div key={c.id} className="card overflow-hidden">
+                <button
+                  onClick={() => setOpenId(open ? null : c.id)}
+                  className="flex w-full flex-wrap items-center justify-between gap-3 p-5 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <I.ChevronDown size={18} className={`text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+                    <div>
+                      <p className="font-medium text-ink">
+                        {c.lastName} {c.firstName} {c.middleName}
+                      </p>
+                      <p className="text-xs text-muted">
+                        @{c.login} · {c.phone} · {c.city}, {c.country}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-sand px-3 py-1 text-xs text-ink">{c.orderCount} заказов</span>
+                </button>
+
+                {open && (
+                  <div className="grid gap-6 border-t border-line p-5 md:grid-cols-2">
+                    <div>
+                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">Контакты</h4>
+                      <dl className="space-y-1 text-sm text-muted">
+                        <Row label="WhatsApp" value={c.whatsapp || "—"} />
+                        <Row label="Telegram" value={c.telegram || "—"} />
+                        <Row label="Email" value={c.email || "—"} />
+                        <Row label="Адрес" value={[c.country, c.city, c.address, c.zip].filter(Boolean).join(", ") || "—"} />
+                        <Row label="Регистрация" value={formatDateShort(c.createdAt)} />
+                      </dl>
+                      <div className="mt-4">
+                        <label className="field-label">Комментарий администратора</label>
+                        <textarea
+                          defaultValue={c.adminComment}
+                          rows={2}
+                          className="field mt-1 text-sm"
+                          onBlur={(e) => saveComment(c.id, e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">История заказов</h4>
+                      {c.orders.length === 0 ? (
+                        <p className="text-sm text-muted">Заказов пока нет.</p>
+                      ) : (
+                        <div className="space-y-2 text-sm">
+                          {c.orders.map((o) => (
+                            <div key={o.id} className="flex justify-between gap-3 rounded-lg bg-paper px-3 py-2">
+                              <span className="text-ink">{o.number}</span>
+                              <span className="text-muted">
+                                {formatDateShort(o.createdAt)} · {formatPrice(o.total)}
+                                {o.paymentConfirmed ? " · оплачен" : ""}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

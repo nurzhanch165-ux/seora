@@ -5,12 +5,14 @@ import { useCart } from "@/store/cart";
 import { useCatalogProducts } from "@/store/catalog";
 import { brandName } from "@/data/brands";
 import { formatPrice } from "@/lib/format";
+import { useT } from "@/hooks/useTranslation";
 import { useHydrated } from "@/lib/useHydrated";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import * as I from "@/components/icons";
 
 export default function CartPage() {
+  const tr = useT();
   const hydrated = useHydrated();
   const lines = useCart((s) => s.lines);
   const setQty = useCart((s) => s.setQty);
@@ -34,18 +36,18 @@ export default function CartPage() {
 
   return (
     <div className="container-site py-8">
-      <Breadcrumbs items={[{ label: "Корзина" }]} />
-      <h1 className="mt-6 h-display text-3xl md:text-4xl">Корзина</h1>
+      <Breadcrumbs items={[{ label: tr("cart.title") }]} />
+      <h1 className="mt-6 h-display text-3xl md:text-4xl">{tr("cart.title")}</h1>
 
       {items.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center justify-center gap-4 py-24 text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-soft text-accent">
             <I.Bag size={28} />
           </span>
-          <p className="text-lg font-medium">Корзина пока пуста</p>
-          <p className="max-w-sm text-sm text-muted">Загляните в каталог — мы собрали лучшее из Кореи для кожи и здоровья.</p>
+          <p className="text-lg font-medium">{tr("cart.empty")}</p>
+          <p className="max-w-sm text-sm text-muted">{tr("cart.emptyHint")}</p>
           <div className="mt-2 flex gap-3">
-            <Link href="/c/cosmetics" className="btn-primary">Косметика</Link>
+            <Link href="/c/cosmetics" className="btn-primary">{tr("cart.toCatalog")}</Link>
             <Link href="/c/health" className="btn-outline">Всё для здоровья</Link>
           </div>
         </div>

@@ -80,7 +80,7 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
   },
 }));
 
-/** Полный список товаров витрины из Supabase. Автоматически загружает при первом обращении. */
+/** Товары витрины (только активные). Админка использует useCatalog().products напрямую. */
 export function useCatalogProducts(): Product[] {
   const products = useCatalog((s) => s.products);
   const loaded = useCatalog((s) => s.loaded);
@@ -88,7 +88,7 @@ export function useCatalogProducts(): Product[] {
   useEffect(() => {
     if (!loaded && !loading) useCatalog.getState().load();
   }, [loaded, loading]);
-  return products;
+  return products.filter((p) => p.active !== false);
 }
 
 export function useCatalogProductBySlug(slug: string): Product | undefined {

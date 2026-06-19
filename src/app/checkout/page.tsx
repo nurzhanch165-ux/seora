@@ -13,7 +13,9 @@ import { brandName } from "@/data/brands";
 import { site } from "@/data/site";
 import { useHydrated } from "@/lib/useHydrated";
 import { exportOrderExcel } from "@/lib/excel";
-import { convertFromKrw, EXCHANGE_RATES, formatCurrency } from "@/lib/currency";
+import { useExchangeRates } from "@/store/exchangeRates";
+import { convertFromKrw, formatCurrency } from "@/lib/currency";
+import { useT } from "@/hooks/useTranslation";
 import { getDeliveryMethods, defaultMethod } from "@/lib/delivery";
 import { Customer, Delivery } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -35,7 +37,10 @@ export default function CheckoutPage() {
   const adminReady = useAdminAuth((s) => s.ready);
   const adminCheck = useAdminAuth((s) => s.check);
   const currency = usePreferences((s) => s.currency);
+  const rates = useExchangeRates((s) => s.rates);
+  const tr = useT();
   const lines = useCart((s) => s.lines);
+  const streamContext = useCart((s) => s.streamContext);
   const clear = useCart((s) => s.clear);
   const createOrder = useOrders((s) => s.createOrder);
   const catalog = useCatalogProducts();
@@ -59,7 +64,7 @@ export default function CheckoutPage() {
     [lines, catalog]
   );
   const totalKrw = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
-  const conversion = convertFromKrw(totalKrw, currency);
+  const conversion = convertFromKrw(totalKrw, currency, rates);
   const total = conversion.total;
 
   const deliveryMethods = useMemo(
@@ -158,7 +163,7 @@ export default function CheckoutPage() {
       delivery: { ...delivery, comment },
       items: items.map((x) => {
         const krw = x.product!.price;
-        const conv = convertFromKrw(krw, currency);
+        const conv = convertFromKrw(krw, currency, rates);
         return {
           productId: x.product!.id,
           slug: x.product!.slug,
@@ -175,9 +180,11 @@ export default function CheckoutPage() {
       totalKrw,
       totalConverted: total,
       currencyCode: currency,
-      exchangeRate: EXCHANGE_RATES[currency],
+      exchangeRate: rates[currency],
       feeAmount: conversion.fee,
-      source: "catalog",
+      source: streamContext ? "stream" : "catalog",
+      streamId: streamContext?.streamId ?? null,
+      streamName: streamContext?.streamName ?? null,
       comment,
     });
     setSubmitting(false);
@@ -186,7 +193,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    exportOrderExcel(res.order);
+    await exportOrderExcel(res.order);
     clear();
     router.push(`/checkout/success?n=${encodeURIComponent(res.order.number)}`);
   }
@@ -194,7 +201,12 @@ export default function CheckoutPage() {
   return (
     <div className="container-site py-8">
       <Breadcrumbs items={[{ label: "Корзина", href: "/cart" }, { label: "Оформление" }]} />
-      <h1 className="mt-6 h-display text-3xl md:text-4xl">Оформление заказа</h1>
+      <h1 className="mt-6 h-display text-3xl md:text-4xl">{tr("checkout.title")}</h1>
+      {streamContext && (
+        <p className="mt-3 rounded-xl2 border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-ink">
+          {tr("checkout.streamOrder")}: <span className="font-medium">{streamContext.streamName}</span>
+        </p>
+      )}
 
       <form onSubmit={submit} className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-8">

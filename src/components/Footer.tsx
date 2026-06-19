@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { sections } from "@/data/categories";
 import { site } from "@/data/site";
+import { useT } from "@/hooks/useTranslation";
 import * as I from "./icons";
 
 export function Footer() {
+  const tr = useT();
   return (
     <footer className="mt-8 border-t border-line bg-surface">
       <div className="container-site grid min-w-0 grid-cols-1 gap-10 py-14 sm:grid-cols-2 sm:py-16 md:grid-cols-4 lg:grid-cols-5">

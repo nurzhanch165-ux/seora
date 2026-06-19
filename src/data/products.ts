@@ -7,7 +7,7 @@ export type Product = {
   slug: string;
   name: string;
   brandSlug: string;
-  sectionSlug: "cosmetics" | "health";
+  sectionSlug: "cosmetics" | "health" | "home" | "clothes" | "shoes";
   categorySlug: string;
   subSlug: string;
   glyph: IconKey;
@@ -31,6 +31,8 @@ export type Product = {
   rating: number;
   reviews: number;
   tags: ("new" | "hit" | "sale")[];
+  sku?: string;
+  active?: boolean;
 };
 
 const CERT_COSMETIC = ["CGMP Korea", "Сертификат соответствия", "Дерматологический контроль"];

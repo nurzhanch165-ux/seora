@@ -43,7 +43,7 @@ async function uploadFiles(files: FileList): Promise<string[]> {
 type EditorState = {
   name: string;
   brandSlug: string;
-  sectionSlug: "cosmetics" | "health";
+  sectionSlug: "cosmetics" | "health" | "home" | "clothes" | "shoes";
   categorySlug: string;
   subSlug: string;
   glyph: IconKey;
@@ -67,6 +67,8 @@ type EditorState = {
   rating: string;
   reviews: string;
   tags: ("new" | "hit" | "sale")[];
+  sku: string;
+  active: boolean;
 };
 
 function initial(product?: Product): EditorState {
@@ -98,6 +100,8 @@ function initial(product?: Product): EditorState {
     rating: product ? String(product.rating) : "5",
     reviews: product ? String(product.reviews) : "0",
     tags: product?.tags ?? [],
+    sku: product?.sku ?? product?.id ?? "",
+    active: product?.active !== false,
   };
 }
 
@@ -128,7 +132,7 @@ export function ProductEditor({
     setForm((f) => ({ ...f, [k]: v }));
   }
 
-  function changeSection(slug: "cosmetics" | "health") {
+  function changeSection(slug: EditorState["sectionSlug"]) {
     const s = sections.find((x) => x.slug === slug) ?? sections[0];
     setForm((f) => ({ ...f, sectionSlug: slug, categorySlug: s.categories[0].slug, subSlug: "" }));
   }
@@ -200,6 +204,8 @@ export function ProductEditor({
       rating: Number(form.rating) || 5,
       reviews: Number(form.reviews) || 0,
       tags: form.tags,
+      sku: form.sku.trim() || id,
+      active: form.active,
     };
     setSaving(true);
     const res = await onSave(result);
@@ -257,7 +263,7 @@ export function ProductEditor({
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <label className="field-label">Раздел</label>
-          <select value={form.sectionSlug} onChange={(e) => changeSection(e.target.value as "cosmetics" | "health")} className="field">
+          <select value={form.sectionSlug} onChange={(e) => changeSection(e.target.value as EditorState["sectionSlug"])} className="field">
             {sections.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
           </select>
         </div>
@@ -277,13 +283,38 @@ export function ProductEditor({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <Field label="Цена *" type="number" value={form.price} onChange={(v) => set("price", v)} />
+        <Field label="Цена (KRW) *" type="number" value={form.price} onChange={(v) => set("price", v)} />
+        <Field label="Артикул / SKU" value={form.sku} onChange={(v) => set("sku", v)} />
         <Field label="Старая цена" type="number" value={form.oldPrice} onChange={(v) => set("oldPrice", v)} />
         <Field label="Остаток" type="number" value={form.stock} onChange={(v) => set("stock", v)} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={form.active}
+            onChange={(e) => set("active", e.target.checked)}
+            className="h-4 w-4 accent-accent"
+          />
+          Товар активен (показывать в каталоге)
+        </label>
+        {Number(form.stock) <= 0 && (
+          <span className="text-xs text-muted">Остаток 0 — статус «закончился» на витрине</span>
+        )}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="field-label">Иконка</label>
           <select value={form.glyph} onChange={(e) => set("glyph", e.target.value as IconKey)} className="field">
             {ICONS.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="field-label">Тон обложки</label>
+          <select value={form.tone} onChange={(e) => set("tone", e.target.value as Tone)} className="field">
+            {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>
@@ -305,12 +336,6 @@ export function ProductEditor({
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Рейтинг (0–5)" type="number" value={form.rating} onChange={(v) => set("rating", v)} />
         <Field label="Кол-во отзывов" type="number" value={form.reviews} onChange={(v) => set("reviews", v)} />
-        <div>
-          <label className="field-label">Тон обложки</label>
-          <select value={form.tone} onChange={(e) => set("tone", e.target.value as Tone)} className="field">
-            {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
       </div>
 
       <div>

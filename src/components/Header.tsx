@@ -10,10 +10,12 @@ import { useWishlist } from "@/store/wishlist";
 import { useAuth } from "@/store/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { LocaleCurrencyBar } from "./LocaleCurrencyBar";
+import { useT } from "@/hooks/useTranslation";
 import { Glyph } from "./Glyph";
 import * as I from "./icons";
 
 export function Header() {
+  const tr = useT();
   const router = useRouter();
   const pathname = usePathname();
   const hydrated = useHydrated();
@@ -56,17 +58,20 @@ export function Header() {
     setQuery("");
   }
 
+  const navPill =
+    "inline-flex items-center gap-1 rounded-full border border-transparent px-3.5 py-2 text-[13px] font-medium transition-colors xl:px-4";
+
   const navLink = (href: string, label: string, accent = false) => {
     const active = pathname === href || pathname.startsWith(href + "/");
     return (
       <Link
         href={href}
-        className={`rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors xl:px-4 ${
+        className={`${navPill} ${
           active
-            ? "bg-ink text-pearl"
+            ? "border-ink bg-ink text-pearl"
             : accent
-              ? "text-accent hover:bg-accent-soft"
-              : "text-ink/70 hover:bg-ink/5 hover:text-ink"
+              ? "text-accent hover:border-accent/20 hover:bg-accent-soft"
+              : "text-ink/70 hover:border-ink/10 hover:bg-ink/5 hover:text-ink"
         }`}
       >
         {label}
@@ -76,10 +81,11 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 overflow-x-hidden border-b border-line bg-pearl shadow-soft">
+      <div className="relative sticky top-0 z-40">
+      <header className="relative border-b border-line bg-pearl shadow-soft">
         <div className="hidden border-b border-line/60 bg-ink md:block">
           <div className="container-site flex h-9 items-center justify-between text-[11px] text-pearl/80">
-            <span>Поставки из Сеула · Оригинальная продукция · Доставка по миру</span>
+            <span>{tr("topbar.tagline")}</span>
             <div className="flex items-center gap-4">
               <LocaleCurrencyBar compact light />
               <a href={site.contacts.whatsappLink} className="link-underline hover:text-white">
@@ -119,22 +125,24 @@ export function Header() {
               <div key={s.slug} onMouseEnter={() => openMega(s.slug)} onMouseLeave={scheduleClose}>
                 <Link
                   href={`/c/${s.slug}`}
-                  className={`flex items-center gap-1 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors xl:px-4 ${
-                    mega === s.slug ? "bg-ink/5 text-ink" : "text-ink/70 hover:bg-ink/5 hover:text-ink"
+                  className={`${navPill} ${
+                    mega === s.slug
+                      ? "border-ink/10 bg-ink/5 text-ink"
+                      : "text-ink/70 hover:border-ink/10 hover:bg-ink/5 hover:text-ink"
                   }`}
                 >
                   {s.name}
                   <I.ChevronDown
                     size={14}
-                    className={`transition-transform ${mega === s.slug ? "rotate-180" : ""}`}
+                    className={`shrink-0 transition-transform duration-200 ${mega === s.slug ? "rotate-180" : ""}`}
                   />
                 </Link>
               </div>
             ))}
-            {navLink("/streams", "Стримы", true)}
-            {navLink("/sale", "Акции", true)}
-            {navLink("/brands", "Бренды")}
-            {navLink("/contacts", "Контакты")}
+            {navLink("/streams", tr("nav.streams"), true)}
+            {navLink("/sale", tr("nav.sale"), true)}
+            {navLink("/brands", tr("nav.brands"))}
+            {navLink("/contacts", tr("nav.contacts"))}
           </nav>
 
           <div className="flex shrink-0 items-center gap-0">
@@ -154,6 +162,8 @@ export function Header() {
             </Link>
           </div>
         </div>
+
+      </header>
 
         {mega && (
           <div
@@ -194,7 +204,7 @@ export function Header() {
             </div>
           </div>
         )}
-      </header>
+      </div>
 
       {searchOpen && (
         <div className="fixed inset-0 z-[60] bg-ink/40 animate-fadeIn" onClick={() => setSearchOpen(false)}>
@@ -206,7 +216,7 @@ export function Header() {
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Поиск: коллаген, тонер, омега-3..."
+                  placeholder={tr("nav.search")}
                   className="w-full bg-transparent py-2 font-display text-lg text-ink outline-none placeholder:text-faint"
                 />
                 <button type="button" className="icon-btn" onClick={() => setSearchOpen(false)} aria-label="Закрыть">
@@ -232,6 +242,7 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 function MobileMenu({ onClose }: { onClose: () => void }) {
+  const tr = useT();
   const [openSection, setOpenSection] = useState<string | null>(sections[0].slug);
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -274,19 +285,19 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
           <div className="mt-4 space-y-1">
             <LocaleCurrencyBar />
             <Link href="/streams" onClick={onClose} className="block py-2.5 text-base font-medium text-accent">
-              Стримы
+              {tr("nav.streams")}
             </Link>
             <Link href="/sale" onClick={onClose} className="block py-2.5 text-base font-medium text-accent">
-              Акции
+              {tr("nav.sale")}
             </Link>
             <Link href="/brands" onClick={onClose} className="block py-2.5 text-base">
-              Бренды
+              {tr("nav.brands")}
             </Link>
             <Link href="/delivery" onClick={onClose} className="block py-2.5 text-base">
-              Доставка
+              {tr("nav.delivery")}
             </Link>
             <Link href="/contacts" onClick={onClose} className="block py-2.5 text-base">
-              Контакты
+              {tr("nav.contacts")}
             </Link>
           </div>
         </div>

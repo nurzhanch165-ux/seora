@@ -31,6 +31,8 @@ export type ProductRow = {
   rating: number | string;
   reviews: number | string;
   tags: string[] | null;
+  sku?: string | null;
+  active?: boolean | null;
 };
 
 export function mapProductRow(row: ProductRow): Product {
@@ -64,6 +66,8 @@ export function mapProductRow(row: ProductRow): Product {
     rating: Number(row.rating) || 0,
     reviews: Number(row.reviews) || 0,
     tags: (row.tags as Product["tags"]) ?? [],
+    sku: row.sku ?? undefined,
+    active: row.active !== false,
   };
 }
 
@@ -98,6 +102,8 @@ export function productToRow(p: Product): Record<string, unknown> {
     rating: p.rating,
     reviews: p.reviews,
     tags: p.tags ?? [],
+    sku: p.sku ?? p.id,
+    active: p.active !== false,
     updated_at: new Date().toISOString(),
   };
 }

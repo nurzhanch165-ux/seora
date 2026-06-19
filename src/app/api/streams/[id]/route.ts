@@ -30,6 +30,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         ...p,
         streamStock: link?.stock ?? 0,
         streamPrice: link?.price_override ?? p.price,
+        position: link?.position ?? 0,
       };
     });
   }
@@ -43,6 +44,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
   const body = await req.json().catch(() => null);
   const admin = createAdminClient();
+
+  if (body?.title || body?.streamDate || body?.endedAt) {
+    const streamPatch: Record<string, unknown> = {};
+    if (typeof body.title === "string") streamPatch.title = body.title;
+    if (typeof body.streamDate === "string") streamPatch.stream_date = body.streamDate;
+    if (typeof body.endedAt === "string") streamPatch.ended_at = body.endedAt;
+    await admin.from("streams").update(streamPatch).eq("id", params.id);
+  }
 
   if (body?.products) {
     await admin.from("stream_products").delete().eq("stream_id", params.id);

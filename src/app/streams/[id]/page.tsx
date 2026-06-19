@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ProductGrid } from "@/components/ProductGrid";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { isStreamOpen, streamDeadline } from "@/lib/types";
+import { useT } from "@/hooks/useTranslation";
 import { Product } from "@/data/products";
 import { mapProductRow, type ProductRow } from "@/lib/supabase/products";
 import * as I from "@/components/icons";
@@ -21,6 +22,7 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
+  const tr = useT();
 
   useEffect(() => {
     fetch(`/api/streams/${params.id}`)
@@ -55,8 +57,8 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }, [remaining]);
 
-  if (loading) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
-  if (!stream) return <div className="container-site py-20 text-center text-muted">Стрим не найден</div>;
+  if (loading) return <div className="container-site py-20 text-center text-muted">{tr("stream.loading")}</div>;
+  if (!stream) return <div className="container-site py-20 text-center text-muted">{tr("stream.notFound")}</div>;
 
   return (
     <div className="container-site py-8">
@@ -68,22 +70,26 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
         </div>
         {open ? (
           <div className="rounded-xl2 border border-accent/30 bg-accent-soft px-5 py-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">Осталось для заказа</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent">{tr("stream.timer")}</p>
             <p className="mt-1 font-mono text-2xl font-bold text-ink">{timerLabel}</p>
           </div>
         ) : (
           <div className="rounded-xl2 border border-line bg-sand px-5 py-3 text-sm text-muted">
             <I.Info size={16} className="mr-1 inline text-muted" />
-            Продажи по этому стриму закрыты
+            {tr("stream.closed")}
           </div>
         )}
       </div>
 
       {products.length === 0 ? (
-        <div className="card mt-10 py-16 text-center text-muted">Товаров в этом стриме пока нет</div>
+        <div className="card mt-10 py-16 text-center text-muted">{tr("stream.empty")}</div>
       ) : (
         <div className="mt-10">
-          <ProductGrid products={products} streamClosed={!open} />
+          <ProductGrid
+            products={products}
+            streamClosed={!open}
+            streamContext={{ streamId: stream.id, streamName: stream.title }}
+          />
         </div>
       )}
     </div>

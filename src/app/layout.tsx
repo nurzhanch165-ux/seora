@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FloatingContacts } from "@/components/FloatingContacts";
 import { CartToast } from "@/components/CartToast";
+import { ExchangeRatesLoader } from "@/components/ExchangeRatesLoader";
 import { site } from "@/data/site";
 
 const onest = Onest({
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <FloatingContacts />
         <CartToast />
+        <ExchangeRatesLoader />
       </body>
     </html>
   );

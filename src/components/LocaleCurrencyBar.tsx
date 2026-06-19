@@ -3,6 +3,7 @@
 import { usePreferences } from "@/store/preferences";
 import { convertFromKrw, formatCurrency, CURRENCIES, type CurrencyCode } from "@/lib/currency";
 import { LOCALES, type Locale } from "@/lib/i18n";
+import { useExchangeRates } from "@/store/exchangeRates";
 
 export function LocaleCurrencyBar({ compact, light }: { compact?: boolean; light?: boolean }) {
   const locale = usePreferences((s) => s.locale);
@@ -42,6 +43,7 @@ export function LocaleCurrencyBar({ compact, light }: { compact?: boolean; light
 
 export function useDisplayPrice(krwPrice: number): string {
   const currency = usePreferences((s) => s.currency);
-  const { total } = convertFromKrw(krwPrice, currency);
+  const rates = useExchangeRates((s) => s.rates);
+  const { total } = convertFromKrw(krwPrice, currency, rates);
   return formatCurrency(total, currency);
 }

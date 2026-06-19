@@ -21,7 +21,7 @@ export type IconKey =
 export type SubCategory = { slug: string; name: string };
 export type Category = { slug: string; name: string; icon: IconKey; subs: SubCategory[] };
 export type Section = {
-  slug: "cosmetics" | "health";
+  slug: "cosmetics" | "health" | "home" | "clothes" | "shoes";
   name: string;
   tagline: string;
   categories: Category[];
@@ -297,6 +297,81 @@ export const sections: Section[] = [
           { slug: "holesterin", name: "Для холестерина" },
           { slug: "kurkumin", name: "Куркумин" },
           { slug: "olivkovoe-maslo", name: "Оливковое масло в капсулах" },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "home",
+    name: "Товары для дома",
+    tagline: "Бытовые товары и аксессуары из Кореи",
+    categories: [
+      {
+        slug: "kitchen",
+        name: "Кухня",
+        icon: "Jar",
+        subs: [
+          { slug: "posuda", name: "Посуда" },
+          { slug: "aksessuary", name: "Аксессуары" },
+        ],
+      },
+      {
+        slug: "interior",
+        name: "Интерьер",
+        icon: "Sparkle",
+        subs: [
+          { slug: "dekor", name: "Декор" },
+          { slug: "aromat", name: "Ароматы для дома" },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "clothes",
+    name: "Одежда",
+    tagline: "Корейская одежда и стиль",
+    categories: [
+      {
+        slug: "women",
+        name: "Женская одежда",
+        icon: "Woman",
+        subs: [
+          { slug: "verh", name: "Верх" },
+          { slug: "niz", name: "Низ" },
+        ],
+      },
+      {
+        slug: "men",
+        name: "Мужская одежда",
+        icon: "Man",
+        subs: [
+          { slug: "verh", name: "Верх" },
+          { slug: "niz", name: "Низ" },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "shoes",
+    name: "Обувь",
+    tagline: "Корейская обувь",
+    categories: [
+      {
+        slug: "women-shoes",
+        name: "Женская обувь",
+        icon: "Woman",
+        subs: [
+          { slug: "krossovki", name: "Кроссовки" },
+          { slug: "botinki", name: "Ботинки" },
+        ],
+      },
+      {
+        slug: "men-shoes",
+        name: "Мужская обувь",
+        icon: "Man",
+        subs: [
+          { slug: "krossovki", name: "Кроссовки" },
+          { slug: "botinki", name: "Ботинки" },
         ],
       },
     ],

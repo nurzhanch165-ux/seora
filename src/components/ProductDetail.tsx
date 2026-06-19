@@ -29,7 +29,7 @@ export function ProductDetail({ product }: { product: Product }) {
   const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0;
 
   function handleAdd() {
-    add(product.id, product.slug, qty);
+    add(product.id, product.slug, qty, null);
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }

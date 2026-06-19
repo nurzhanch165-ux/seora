@@ -22,6 +22,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
     patch.status = body.status;
   }
+  if (typeof body.adminComment === "string") {
+    patch.admin_comment = body.adminComment;
+  }
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Нет изменений." }, { status: 400 });
   }

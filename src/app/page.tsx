@@ -5,6 +5,8 @@ import { site } from "@/data/site";
 import { Glyph } from "@/components/Glyph";
 import { FeaturedGrid } from "@/components/FeaturedGrid";
 import { SectionHeading } from "@/components/SectionHeading";
+import { HomeHero } from "@/components/home/HomeHero";
+import { HomeSectionHeading } from "@/components/home/HomeSectionHeading";
 import { Reveal } from "@/components/Reveal";
 import * as I from "@/components/icons";
 
@@ -12,9 +14,9 @@ const HOME_CATEGORIES = [
   { slug: "cosmetics", name: "Косметика", icon: "Sparkle" as const, href: "/c/cosmetics" },
   { slug: "vitamins", name: "Витамины и БАДы", icon: "Pill" as const, href: "/c/health" },
   { slug: "health", name: "Товары для здоровья", icon: "HealthHeart" as const, href: "/c/health" },
-  { slug: "home", name: "Товары для дома", icon: "Jar" as const, href: "/c/cosmetics" },
-  { slug: "clothes", name: "Одежда", icon: "Woman" as const, href: "/c/cosmetics" },
-  { slug: "shoes", name: "Обувь", icon: "Man" as const, href: "/c/cosmetics" },
+  { slug: "home", name: "Товары для дома", icon: "Jar" as const, href: "/c/home" },
+  { slug: "clothes", name: "Одежда", icon: "Woman" as const, href: "/c/clothes" },
+  { slug: "shoes", name: "Обувь", icon: "Man" as const, href: "/c/shoes" },
 ];
 
 const WHY_US = [
@@ -42,7 +44,7 @@ const BRAND_STRIP = ["COSRX", "Laneige", "Innisfree", "Sulwhasoo", "Dr.Jart+", "
 export default function HomePage() {
   return (
     <>
-      <Hero />
+      <HomeHero />
       <BrandMarquee />
       <AboutBlock />
       <CategoriesBlock />
@@ -51,7 +53,7 @@ export default function HomePage() {
 
       <section className="container-site mt-20 sm:mt-28">
         <Reveal>
-          <SectionHeading title="Хиты продаж" href="/sale" hrefLabel="Все популярные" />
+          <HomeSectionHeading titleKey="home.hits" href="/sale" hrefLabelKey="home.hits" />
         </Reveal>
         <FeaturedGrid kind="hit" />
       </section>
@@ -60,7 +62,7 @@ export default function HomePage() {
 
       <section className="container-site mt-20 sm:mt-28">
         <Reveal>
-          <SectionHeading title="Новинки каталога" href="/c/cosmetics" />
+          <HomeSectionHeading titleKey="home.new" href="/c/cosmetics" />
         </Reveal>
         <FeaturedGrid kind="new" />
       </section>
@@ -175,7 +177,7 @@ function CategoriesBlock() {
     <section className="section-muted mt-20 sm:mt-28">
       <div className="container-site py-16 sm:py-20">
         <Reveal>
-          <SectionHeading title="Что можно купить" />
+          <HomeSectionHeading titleKey="home.categories.title" />
         </Reveal>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-4">
           {HOME_CATEGORIES.map((c, i) => (

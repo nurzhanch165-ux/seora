@@ -62,7 +62,7 @@ function SuccessInner() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3">
-              <button onClick={() => exportOrderExcel(order)} className="btn-outline">
+              <button onClick={() => void exportOrderExcel(order)} className="btn-outline">
                 <I.Download size={18} /> Скачать Excel заказа
               </button>
               <Link href="/account" className="btn-primary">

@@ -19,6 +19,7 @@ type OrdersState = {
   setStatus: (id: string, status: OrderStatus) => Promise<Result>;
   confirmPayment: (id: string) => Promise<Result>;
   attachScreenshot: (id: string, file: File) => Promise<Result>;
+  updateAdminComment: (id: string, adminComment: string) => Promise<Result>;
   upsertLocal: (order: Order) => void;
 };
 
@@ -92,6 +93,18 @@ export const useOrders = create<OrdersState>()((set, get) => ({
     const res = await fetch(`/api/orders/${id}/screenshot`, { method: "POST", body: fd });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: json.error ?? "Не удалось загрузить скриншот." };
+    get().upsertLocal(json.order as Order);
+    return { ok: true };
+  },
+
+  updateAdminComment: async (id, adminComment) => {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adminComment }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: json.error ?? "Не удалось сохранить комментарий." };
     get().upsertLocal(json.order as Order);
     return { ok: true };
   },

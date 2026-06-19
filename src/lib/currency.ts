@@ -7,18 +7,22 @@ export const CURRENCIES: { code: CurrencyCode; symbol: string; label: string; lo
   { code: "EUR", symbol: "€", label: "Евро (EUR)", locale: "de-DE" },
 ];
 
-/** Базовые курсы: 1 KRW → валюта (обновляются вручную / через API позже) */
+/** Базовые курсы: 1 KRW → валюта (fallback если API недоступен) */
 export const EXCHANGE_RATES: Record<CurrencyCode, number> = {
   KRW: 1,
-  KZT: 0.38,   // ~1 KRW ≈ 0.38 KZT
+  KZT: 0.38,
   USD: 0.00074,
   EUR: 0.00068,
 };
 
-export const CONVERSION_FEE = 0.03; // +3% комиссия
+export const CONVERSION_FEE = 0.03;
 
-export function convertFromKrw(amountKrw: number, to: CurrencyCode) {
-  const rate = EXCHANGE_RATES[to];
+export function convertFromKrw(
+  amountKrw: number,
+  to: CurrencyCode,
+  rates: Record<CurrencyCode, number> = EXCHANGE_RATES
+) {
+  const rate = rates[to];
   const base = amountKrw * rate;
   if (to === "KRW") {
     return { base, fee: 0, total: base, rate: 1 };

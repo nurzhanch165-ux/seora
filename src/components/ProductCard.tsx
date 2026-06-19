@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { Product } from "@/data/products";
 import { brandName } from "@/data/brands";
-import { useCart } from "@/store/cart";
+import { useCart, type StreamContext } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { useCartToast } from "@/store/cartToast";
 import { useHydrated } from "@/lib/useHydrated";
+import { useT } from "@/hooks/useTranslation";
 import { useDisplayPrice } from "@/components/LocaleCurrencyBar";
 import { ProductVisual } from "./ProductVisual";
 import * as I from "./icons";
@@ -14,15 +15,17 @@ import * as I from "./icons";
 type Props = {
   product: Product;
   streamClosed?: boolean;
+  streamContext?: StreamContext;
   onAdd?: () => void;
 };
 
-export function ProductCard({ product, streamClosed, onAdd }: Props) {
+export function ProductCard({ product, streamClosed, streamContext, onAdd }: Props) {
   const add = useCart((s) => s.add);
   const showToast = useCartToast((s) => s.show);
   const toggle = useWishlist((s) => s.toggle);
   const ids = useWishlist((s) => s.ids);
   const hydrated = useHydrated();
+  const tr = useT();
   const liked = hydrated && ids.includes(product.id);
   const displayPrice = useDisplayPrice(product.price);
   const displayOldRaw = useDisplayPrice(product.oldPrice ?? 0);
@@ -32,7 +35,7 @@ export function ProductCard({ product, streamClosed, onAdd }: Props) {
 
   function handleAdd() {
     if (streamClosed || outOfStock) return;
-    add(product.id, product.slug);
+    add(product.id, product.slug, 1, streamContext ?? null);
     showToast(product.name);
     onAdd?.();
   }
@@ -59,7 +62,7 @@ export function ProductCard({ product, streamClosed, onAdd }: Props) {
           )}
           {outOfStock && (
             <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
-              Закончился
+              {tr("product.outOfStock")}
             </span>
           )}
         </div>
@@ -77,7 +80,7 @@ export function ProductCard({ product, streamClosed, onAdd }: Props) {
             onClick={handleAdd}
             className="absolute inset-x-3 bottom-3 hidden translate-y-2 rounded-full bg-ink py-2.5 text-xs font-medium text-pearl opacity-0 transition-all duration-300 ease-smooth hover:bg-accent group-hover:translate-y-0 group-hover:opacity-100 lg:block"
           >
-            В корзину
+            {tr("product.addToCart")}
           </button>
         )}
       </div>
@@ -102,17 +105,17 @@ export function ProductCard({ product, streamClosed, onAdd }: Props) {
           {displayOld && <span className="text-sm text-faint line-through">{displayOld}</span>}
         </div>
         {streamClosed ? (
-          <p className="mt-2 text-center text-xs text-muted">Продажи по стриму закрыты</p>
+          <p className="mt-2 text-center text-xs text-muted">{tr("product.streamClosed")}</p>
         ) : outOfStock ? (
           <button disabled className="mt-2 w-full rounded-full bg-mist py-2.5 text-xs font-medium text-muted lg:hidden">
-            Закончился
+            {tr("product.outOfStock")}
           </button>
         ) : (
           <button
             onClick={handleAdd}
             className="mt-2 w-full rounded-full bg-ink py-2.5 text-xs font-medium text-pearl transition-colors hover:bg-accent lg:hidden"
           >
-            В корзину
+            {tr("product.addToCart")}
           </button>
         )}
       </div>
