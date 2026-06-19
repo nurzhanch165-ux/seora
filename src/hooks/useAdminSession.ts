@@ -23,7 +23,7 @@ export function useAdminSession(mode: "requireAuth" | "redirectIfAuthed") {
 
   useEffect(() => {
     if (!checked) return;
-    if (mode === "requireAuth" && !loggedIn) router.replace("/admin/login");
+    if (mode === "requireAuth" && !loggedIn) router.replace("/login?next=/admin");
     if (mode === "redirectIfAuthed" && loggedIn) router.replace("/admin");
   }, [checked, loggedIn, mode, router]);
 

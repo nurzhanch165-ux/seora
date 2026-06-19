@@ -66,7 +66,7 @@ export default function AdminPage() {
             ))}
           </div>
           <button
-            onClick={() => { logout(); router.replace("/admin/login"); }}
+            onClick={() => { logout(); router.replace("/login"); }}
             className="btn-outline px-4 py-2 text-sm"
           >
             {tr("admin.logout")}
