@@ -9,21 +9,22 @@ import { useCatalog } from "@/store/catalog";
 import { Product } from "@/data/products";
 import { brandName } from "@/data/brands";
 import { formatPrice, formatDateShort } from "@/lib/format";
-import { ORDER_STATUSES, OrderStatus } from "@/lib/types";
+import { ORDER_STATUSES, OrderStatus, getStatusLabel } from "@/lib/types";
 import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportItemsTotalExcel } from "@/lib/excel";
 import { buildStreamPositionMap, type StreamPositionMap } from "@/lib/excelCore";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ProductEditor } from "@/components/admin/ProductEditor";
 import { StreamEditor } from "@/components/admin/StreamEditor";
+import { useAdminSession } from "@/hooks/useAdminSession";
+import { useT, useLocale } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
 type Tab = "orders" | "warehouse" | "products" | "streams" | "customers";
 
 export default function AdminPage() {
   const router = useRouter();
-  const ready = useAdminAuth((s) => s.ready);
-  const loggedIn = useAdminAuth((s) => s.loggedIn);
-  const check = useAdminAuth((s) => s.check);
+  const tr = useT();
+  const { checked, loggedIn } = useAdminSession("requireAuth");
   const logout = useAdminAuth((s) => s.logout);
   const loadAll = useOrders((s) => s.loadAll);
   const [tab, setTab] = useState<Tab>("orders");
@@ -31,27 +32,30 @@ export default function AdminPage() {
   const loadCatalog = useCatalog((s) => s.load);
 
   useEffect(() => {
-    check();
-  }, [check]);
-
-  useEffect(() => {
-    if (ready && !loggedIn) router.replace("/admin/login");
-    if (ready && loggedIn) {
+    if (checked && loggedIn) {
       loadAll();
       loadCatalog();
     }
-  }, [ready, loggedIn, router, loadAll, loadCatalog]);
+  }, [checked, loggedIn, loadAll, loadCatalog]);
 
-  if (!ready) return <div className="container-site py-20 text-center text-muted">Загрузка…</div>;
-  if (!loggedIn) return <div className="container-site py-20 text-center text-muted">Перенаправление на страницу входа…</div>;
+  if (!checked) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
+  if (!loggedIn) return <div className="container-site py-20 text-center text-muted">{tr("admin.redirecting")}</div>;
+
+  const tabs: [Tab, string][] = [
+    ["orders", tr("admin.tab.orders")],
+    ["warehouse", tr("admin.tab.warehouse")],
+    ["products", tr("admin.tab.products")],
+    ["streams", tr("admin.tab.streams")],
+    ["customers", tr("admin.tab.customers")],
+  ];
 
   return (
     <div className="container-site py-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="h-display text-3xl md:text-4xl">Администратор</h1>
+        <h1 className="h-display text-3xl md:text-4xl">{tr("admin.title")}</h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 rounded-full border border-line bg-surface p-1">
-            {([["orders", "Заказы"], ["warehouse", "Excel"], ["products", "Товары"], ["streams", "Стримы"], ["customers", "Клиенты"]] as [Tab, string][]).map(([t, label]) => (
+            {tabs.map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -65,7 +69,7 @@ export default function AdminPage() {
             onClick={() => { logout(); router.replace("/admin/login"); }}
             className="btn-outline px-4 py-2 text-sm"
           >
-            Выйти
+            {tr("admin.logout")}
           </button>
         </div>
       </div>
@@ -82,6 +86,8 @@ export default function AdminPage() {
 }
 
 function OrdersAdmin() {
+  const tr = useT();
+  const locale = useLocale();
   const orders = useOrders((s) => s.orders);
   const setStatus = useOrders((s) => s.setStatus);
   const confirmPayment = useOrders((s) => s.confirmPayment);
@@ -109,29 +115,29 @@ function OrdersAdmin() {
   }), [filtered]);
 
   if (orders.length === 0) {
-    return <div className="card py-20 text-center text-muted">Заказов пока нет. Оформите тестовый заказ в каталоге.</div>;
+    return <div className="card py-20 text-center text-muted">{tr("admin.orders.empty")}</div>;
   }
 
   return (
     <>
       <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <input placeholder="Страна" value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)} className="field text-sm" />
-        <input placeholder="Доставка" value={filterDelivery} onChange={(e) => setFilterDelivery(e.target.value)} className="field text-sm" />
+        <input placeholder={tr("admin.orders.filter.country")} value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)} className="field text-sm" />
+        <input placeholder={tr("admin.orders.filter.delivery")} value={filterDelivery} onChange={(e) => setFilterDelivery(e.target.value)} className="field text-sm" />
         <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)} className="field text-sm">
-          <option value="">Все оплаты</option>
-          <option value="paid">Оплачено</option>
-          <option value="awaiting">Ожидает</option>
+          <option value="">{tr("admin.orders.filter.allPayments")}</option>
+          <option value="paid">{tr("admin.orders.filter.paid")}</option>
+          <option value="awaiting">{tr("admin.orders.filter.awaiting")}</option>
         </select>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="field text-sm">
-          <option value="">Все статусы</option>
-          {ORDER_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          <option value="">{tr("admin.orders.filter.allStatuses")}</option>
+          {ORDER_STATUSES.map((s) => <option key={s.value} value={s.value}>{getStatusLabel(s.value, locale)}</option>)}
         </select>
       </div>
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Всего заказов" value={String(stats.total)} />
-        <Stat label="Оплачено" value={String(stats.paid)} />
-        <Stat label="Ожидают оплату" value={String(stats.awaiting)} />
-        <Stat label="Выручка (оплачено)" value={formatPrice(stats.revenue)} />
+        <Stat label={tr("admin.orders.stat.total")} value={String(stats.total)} />
+        <Stat label={tr("admin.orders.stat.paid")} value={String(stats.paid)} />
+        <Stat label={tr("admin.orders.stat.awaiting")} value={String(stats.awaiting)} />
+        <Stat label={tr("admin.orders.stat.revenue")} value={formatPrice(stats.revenue)} />
       </div>
 
       <div className="space-y-3">
@@ -147,7 +153,7 @@ function OrdersAdmin() {
                     <p className="text-xs text-muted">
                       {formatDateShort(order.createdAt)} · {order.customer.lastName} {order.customer.firstName} · {formatPrice(order.total)}
                       {order.source === "stream" && (
-                        <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-accent">стрим</span>
+                        <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-accent">{tr("admin.orders.streamBadge")}</span>
                       )}
                     </p>
                   </div>
@@ -155,11 +161,11 @@ function OrdersAdmin() {
                 <div className="flex items-center gap-2">
                   {order.paymentConfirmed ? (
                     <span className="flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
-                      <I.Check size={14} /> Оплачен
+                      <I.Check size={14} /> {tr("admin.orders.paidBadge")}
                     </span>
                   ) : (
                     <button onClick={() => confirmPayment(order.id)} className="btn-accent px-3 py-1.5 text-xs">
-                      Подтвердить оплату
+                      {tr("admin.orders.confirmPayment")}
                     </button>
                   )}
                   <select
@@ -168,7 +174,7 @@ function OrdersAdmin() {
                     className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs outline-none focus:border-accent"
                   >
                     {ORDER_STATUSES.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
+                      <option key={s.value} value={s.value}>{getStatusLabel(s.value, locale)}</option>
                     ))}
                   </select>
                 </div>
@@ -177,26 +183,26 @@ function OrdersAdmin() {
               {open && (
                 <div className="grid gap-6 border-t border-line p-5 md:grid-cols-2">
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">Клиент</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.orders.client")}</h4>
                     <dl className="space-y-1 text-sm text-muted">
-                      <Row label="ФИО" value={`${order.customer.lastName} ${order.customer.firstName} ${order.customer.middleName}`} />
-                      <Row label="Страна / город" value={`${order.customer.country}, ${order.customer.city}`} />
-                      <Row label="Телефон" value={order.customer.phone} />
+                      <Row label={tr("admin.orders.fullName")} value={`${order.customer.lastName} ${order.customer.firstName} ${order.customer.middleName}`} />
+                      <Row label={tr("admin.orders.countryCity")} value={`${order.customer.country}, ${order.customer.city}`} />
+                      <Row label={tr("admin.orders.phone")} value={order.customer.phone} />
                       <Row label="WhatsApp" value={order.customer.whatsapp} />
                       <Row label="Telegram" value={order.customer.telegram} />
                       <Row label="Email" value={order.customer.email || "—"} />
                     </dl>
-                    <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">Доставка</h4>
+                    <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.orders.delivery")}</h4>
                     <dl className="space-y-1 text-sm text-muted">
-                      <Row label="Получатель" value={order.delivery.recipient} />
-                      <Row label="Адрес" value={`${order.delivery.country}, ${order.delivery.city}, ${order.delivery.address} ${order.delivery.zip}`} />
-                      <Row label="Способ" value={order.delivery.method} />
+                      <Row label={tr("admin.orders.recipient")} value={order.delivery.recipient} />
+                      <Row label={tr("admin.orders.address")} value={`${order.delivery.country}, ${order.delivery.city}, ${order.delivery.address} ${order.delivery.zip}`} />
+                      <Row label={tr("admin.orders.method")} value={order.delivery.method} />
                     </dl>
                     {order.comment && (
-                      <p className="mt-3 rounded-lg bg-paper px-3 py-2 text-xs text-muted">Комментарий клиента: {order.comment}</p>
+                      <p className="mt-3 rounded-lg bg-paper px-3 py-2 text-xs text-muted">{tr("admin.orders.clientComment")}: {order.comment}</p>
                     )}
                     <div className="mt-4">
-                      <label className="field-label">Комментарий администратора</label>
+                      <label className="field-label">{tr("admin.orders.adminComment")}</label>
                       <textarea
                         defaultValue={order.adminComment ?? ""}
                         rows={2}
@@ -211,7 +217,7 @@ function OrdersAdmin() {
                   </div>
 
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">Состав заказа</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.orders.items")}</h4>
                     <div className="space-y-1.5 text-sm">
                       {order.items.map((it) => (
                         <div key={it.productId} className="flex justify-between gap-3">
@@ -221,19 +227,19 @@ function OrdersAdmin() {
                       ))}
                     </div>
                     <div className="mt-2 flex justify-between border-t border-line pt-2 text-sm font-semibold">
-                      <span>Итого</span><span>{formatPrice(order.total)}</span>
+                      <span>{tr("admin.orders.total")}</span><span>{formatPrice(order.total)}</span>
                     </div>
 
-                    <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">Скриншот оплаты</h4>
+                    <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.orders.paymentScreenshot")}</h4>
                     {order.paymentScreenshot ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={order.paymentScreenshot} alt="Оплата" className="max-h-56 rounded-lg border border-line" />
+                      <img src={order.paymentScreenshot} alt="" className="max-h-56 rounded-lg border border-line" />
                     ) : (
-                      <p className="text-sm text-muted">Скриншот ещё не загружен клиентом.</p>
+                      <p className="text-sm text-muted">{tr("admin.orders.noScreenshot")}</p>
                     )}
 
                     <button onClick={() => void exportOrderExcel(order)} className="btn-outline mt-4 text-sm">
-                      <I.Download size={16} /> Excel заказа
+                      <I.Download size={16} /> {tr("admin.orders.exportExcel")}
                     </button>
                   </div>
                 </div>
@@ -247,6 +253,7 @@ function OrdersAdmin() {
 }
 
 function WarehouseAdmin() {
+  const tr = useT();
   const orders = useOrders((s) => s.orders);
   const products = useCatalog((s) => s.products);
   const [from, setFrom] = useState(new Date().toISOString().slice(0, 10));
@@ -282,8 +289,8 @@ function WarehouseAdmin() {
     setExportMsg("");
     const res = await fetch("/api/admin/exports", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     const j = await res.json();
-    if (!res.ok) { setExportMsg(j.error ?? "Ошибка"); return; }
-    setExportMsg(`Сформировано: ${j.orderCount} заказов за ${j.date}`);
+    if (!res.ok) { setExportMsg(j.error ?? tr("errors.generic")); return; }
+    setExportMsg(tr("admin.warehouse.generated", { count: j.orderCount, date: j.date }));
     const list = await fetch("/api/admin/exports").then((r) => r.json());
     setAutoExports(list.files ?? []);
   }
@@ -321,32 +328,30 @@ function WarehouseAdmin() {
   return (
     <div className="space-y-6">
       <div className="card p-6 md:p-8">
-        <h2 className="text-lg font-medium">Excel-файлы для склада</h2>
-        <p className="mt-1 text-sm text-muted">
-          Основной файл — формат склада (RU/KR, ₩, адрес, доставка). Дополнительно: детальный отчёт и сводка по товарам.
-        </p>
+        <h2 className="text-lg font-medium">{tr("admin.warehouse.title")}</h2>
+        <p className="mt-1 text-sm text-muted">{tr("admin.warehouse.subtitle")}</p>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          <button onClick={() => preset(1)} className="chip">Сегодня</button>
-          <button onClick={() => preset(7)} className="chip">За неделю</button>
-          <button onClick={() => { const t = new Date().toISOString().slice(0, 10); setFrom(t); setTo(t); }} className="chip">Только дата</button>
+          <button onClick={() => preset(1)} className="chip">{tr("admin.warehouse.today")}</button>
+          <button onClick={() => preset(7)} className="chip">{tr("admin.warehouse.week")}</button>
+          <button onClick={() => { const t = new Date().toISOString().slice(0, 10); setFrom(t); setTo(t); }} className="chip">{tr("admin.warehouse.dateOnly")}</button>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="field-label">С даты</label>
+            <label className="field-label">{tr("admin.warehouse.from")}</label>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="field" />
           </div>
           <div>
-            <label className="field-label">По дату</label>
+            <label className="field-label">{tr("admin.warehouse.to")}</label>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="field" />
           </div>
         </div>
 
         <div className="mt-4">
-          <label className="field-label">Стрим (необязательно)</label>
+          <label className="field-label">{tr("admin.warehouse.stream")}</label>
           <select value={streamId} onChange={(e) => setStreamId(e.target.value)} className="field max-w-md">
-            <option value="">Все заказы (каталог + стримы)</option>
+            <option value="">{tr("admin.warehouse.allOrders")}</option>
             {streams.map((s) => (
               <option key={s.id} value={s.id}>{s.title}</option>
             ))}
@@ -355,10 +360,10 @@ function WarehouseAdmin() {
 
         <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm text-muted">
           <input type="checkbox" checked={paidOnly} onChange={(e) => setPaidOnly(e.target.checked)} className="h-4 w-4 accent-accent" />
-          Только оплаченные заказы
+          {tr("admin.warehouse.paidOnly")}
         </label>
 
-        <p className="mt-4 text-sm text-muted">К выгрузке: <span className="font-medium text-ink">{filtered.length}</span> заказов</p>
+        <p className="mt-4 text-sm text-muted">{tr("admin.warehouse.exportCount", { count: filtered.length })}</p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <button
@@ -386,11 +391,9 @@ function WarehouseAdmin() {
       </div>
 
       <div className="card p-6 md:p-8">
-        <h2 className="text-lg font-medium">Авто-Excel (ежедневно по cron)</h2>
-        <p className="mt-1 text-sm text-muted">
-          Vercel Cron в 15:00 UTC формирует orders_*, items_total_* и warehouse_* за текущий день (KST). Можно запустить вручную.
-        </p>
-        <button onClick={runAutoExport} className="btn-outline mt-4 text-sm">Сформировать за сегодня</button>
+        <h2 className="text-lg font-medium">{tr("admin.warehouse.cronTitle")}</h2>
+        <p className="mt-1 text-sm text-muted">{tr("admin.warehouse.cronSubtitle")}</p>
+        <button onClick={runAutoExport} className="btn-outline mt-4 text-sm">{tr("admin.warehouse.runToday")}</button>
         {exportMsg && <p className="mt-3 text-sm text-accent">{exportMsg}</p>}
         {autoExports.length > 0 && (
           <ul className="mt-4 space-y-2 text-sm">
@@ -398,7 +401,7 @@ function WarehouseAdmin() {
               <li key={f.path} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-pearl px-3 py-2">
                 <span className="text-ink">{f.name}</span>
                 {f.url ? (
-                  <a href={f.url} className="text-accent hover:underline" download>Скачать</a>
+                  <a href={f.url} className="text-accent hover:underline" download>{tr("admin.warehouse.download")}</a>
                 ) : (
                   <span className="text-muted">—</span>
                 )}
@@ -412,6 +415,7 @@ function WarehouseAdmin() {
 }
 
 function StreamsAdmin() {
+  const tr = useT();
   const all = useCatalog((s) => s.products);
   const [streams, setStreams] = useState<{ id: string; title: string; stream_date: string; ended_at: string }[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -431,18 +435,18 @@ function StreamsAdmin() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: title || `Стрим ${streamDate}`,
+        title: title || tr("admin.streams.defaultTitle", { date: streamDate }),
         streamDate,
         endedAt: new Date(endedAt).toISOString(),
         products: selectedProducts.map((id, i) => ({ productId: id, position: i })),
       }),
     });
     const j = await res.json();
-    if (!res.ok) { setMsg(j.error ?? "Ошибка"); return; }
+    if (!res.ok) { setMsg(j.error ?? tr("errors.generic")); return; }
     setStreams((s) => [j.stream, ...s]);
     setTitle("");
     setSelectedProducts([]);
-    setMsg("Стрим создан");
+    setMsg(tr("admin.streams.created"));
   }
 
   if (editId) {
@@ -461,14 +465,14 @@ function StreamsAdmin() {
   return (
     <div className="space-y-6">
       <div className="card p-6">
-        <h2 className="text-lg font-medium">Новый стрим</h2>
+        <h2 className="text-lg font-medium">{tr("admin.streams.newTitle")}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div><label className="field-label">Название</label><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Стрим 19.06.2026" /></div>
-          <div><label className="field-label">Дата стрима</label><input type="date" className="field" value={streamDate} onChange={(e) => setStreamDate(e.target.value)} /></div>
-          <div><label className="field-label">Окончание стрима</label><input type="datetime-local" className="field" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} /></div>
+          <div><label className="field-label">{tr("admin.streams.name")}</label><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr("admin.streams.namePlaceholder")} /></div>
+          <div><label className="field-label">{tr("admin.streams.date")}</label><input type="date" className="field" value={streamDate} onChange={(e) => setStreamDate(e.target.value)} /></div>
+          <div><label className="field-label">{tr("admin.streams.end")}</label><input type="datetime-local" className="field" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} /></div>
         </div>
         <div className="mt-4">
-          <label className="field-label">Товары из базы</label>
+          <label className="field-label">{tr("admin.streams.productsFromCatalog")}</label>
           <div className="max-h-48 overflow-y-auto rounded-xl border border-line p-3">
             {all.slice(0, 30).map((p) => (
               <label key={p.id} className="flex cursor-pointer items-center gap-2 py-1 text-sm">
@@ -481,11 +485,11 @@ function StreamsAdmin() {
           </div>
         </div>
         {msg && <p className="mt-3 text-sm text-accent">{msg}</p>}
-        <button onClick={createStream} className="btn-primary mt-4">Создать стрим</button>
+        <button onClick={createStream} className="btn-primary mt-4">{tr("admin.streams.create")}</button>
       </div>
 
       <div className="card p-6">
-        <h2 className="text-lg font-medium">Все стримы ({streams.length})</h2>
+        <h2 className="text-lg font-medium">{tr("admin.streams.allTitle", { count: streams.length })}</h2>
         <div className="mt-4 space-y-2">
           {streams.map((s) => (
             <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3">
@@ -494,8 +498,8 @@ function StreamsAdmin() {
                 <p className="text-xs text-muted">{s.stream_date}</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setEditId(s.id)} className="btn-outline px-3 py-1.5 text-xs">Редактировать</button>
-                <Link href={`/streams/${s.id}`} className="btn-outline px-3 py-1.5 text-xs">Открыть</Link>
+                <button onClick={() => setEditId(s.id)} className="btn-outline px-3 py-1.5 text-xs">{tr("admin.streams.edit")}</button>
+                <Link href={`/streams/${s.id}`} className="btn-outline px-3 py-1.5 text-xs">{tr("admin.streams.open")}</Link>
               </div>
             </div>
           ))}
@@ -506,6 +510,7 @@ function StreamsAdmin() {
 }
 
 function ProductsAdmin() {
+  const tr = useT();
   const all = useCatalog((s) => s.products);
   const addProduct = useCatalog((s) => s.addProduct);
   const updateProduct = useCatalog((s) => s.updateProduct);
@@ -532,7 +537,7 @@ function ProductsAdmin() {
   if (mode === "new") {
     return (
       <div className="card p-6 md:p-8">
-        <h2 className="mb-6 text-lg font-medium">Новый товар</h2>
+        <h2 className="mb-6 text-lg font-medium">{tr("admin.products.newTitle")}</h2>
         <ProductEditor
           onSave={async (p) => {
             const res = await addProduct(p);
@@ -548,7 +553,7 @@ function ProductsAdmin() {
   if (editing) {
     return (
       <div className="card p-6 md:p-8">
-        <h2 className="mb-6 text-lg font-medium">Редактирование: {editing.name}</h2>
+        <h2 className="mb-6 text-lg font-medium">{tr("admin.products.editTitle", { name: editing.name })}</h2>
         <ProductEditor
           product={editing}
           onSave={async (p) => {
@@ -566,11 +571,11 @@ function ProductsAdmin() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-medium">Каталог · {all.length} товаров</h2>
-          <p className="text-sm text-muted">Можно изменить любой товар, включая фотографии, или добавить новый.</p>
+          <h2 className="text-lg font-medium">{tr("admin.products.catalogTitle", { count: all.length })}</h2>
+          <p className="text-sm text-muted">{tr("admin.products.catalogHint")}</p>
         </div>
         <button onClick={() => setMode("new")} className="btn-primary">
-          <I.Plus size={18} /> Добавить товар
+          <I.Plus size={18} /> {tr("admin.products.add")}
         </button>
       </div>
 
@@ -578,7 +583,7 @@ function ProductsAdmin() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск по названию или бренду…"
+          placeholder={tr("admin.products.search")}
           className="field max-w-md"
         />
       </div>
@@ -600,19 +605,19 @@ function ProductsAdmin() {
             <div className="flex min-w-0 flex-1 flex-col">
               <p className="truncate text-sm font-medium text-ink">{p.name}</p>
               <p className="text-xs text-muted">{brandName(p.brandSlug)}</p>
-              <p className="mt-0.5 text-xs text-muted">{formatPrice(p.price)} · остаток {p.stock}{p.active === false ? " · скрыт" : ""}</p>
+              <p className="mt-0.5 text-xs text-muted">{formatPrice(p.price)} · {tr("admin.products.stock")} {p.stock}{p.active === false ? ` · ${tr("admin.products.hidden")}` : ""}</p>
               <div className="mt-auto flex gap-2 pt-2">
                 <button onClick={() => setMode(p.id)} className="btn-outline px-3 py-1.5 text-xs">
-                  <I.Edit size={14} /> Изменить
+                  <I.Edit size={14} /> {tr("admin.products.edit")}
                 </button>
                 <button
                   onClick={async () => {
-                    if (!confirm(`Удалить «${p.name}»?`)) return;
+                    if (!confirm(tr("admin.products.deleteConfirm", { name: p.name }))) return;
                     const res = await removeProduct(p.id);
-                    if (!res.ok) setActionError(res.error ?? "Не удалось удалить товар.");
+                    if (!res.ok) setActionError(res.error ?? tr("admin.products.deleteFailed"));
                   }}
                   className="flex items-center justify-center rounded-full border border-line px-2.5 text-faint hover:border-sale hover:text-sale"
-                  aria-label="Удалить"
+                  aria-label={tr("admin.products.delete")}
                 >
                   <I.Trash size={16} />
                 </button>
@@ -626,6 +631,7 @@ function ProductsAdmin() {
 }
 
 function CustomersAdmin() {
+  const tr = useT();
   type AdminCustomer = {
     id: string;
     login: string;
@@ -675,26 +681,26 @@ function CustomersAdmin() {
     });
     const j = await res.json();
     if (!res.ok) {
-      setMsg(j.error ?? "Не удалось сохранить комментарий.");
+      setMsg(j.error ?? tr("admin.customers.commentFailed"));
       return;
     }
     setCustomers((list) => list.map((c) => (c.id === id ? { ...c, adminComment } : c)));
     setMsg("");
   }
 
-  if (loading) return <div className="card py-20 text-center text-muted">Загрузка клиентов…</div>;
+  if (loading) return <div className="card py-20 text-center text-muted">{tr("admin.customers.loading")}</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium">Клиентская база · {customers.length}</h2>
-          <p className="text-sm text-muted">Контакты и история заказов зарегистрированных клиентов.</p>
+          <h2 className="text-lg font-medium">{tr("admin.customers.title", { count: customers.length })}</h2>
+          <p className="text-sm text-muted">{tr("admin.customers.subtitle")}</p>
         </div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск по имени, логину, телефону…"
+          placeholder={tr("admin.customers.search")}
           className="field max-w-sm"
         />
       </div>
@@ -702,7 +708,7 @@ function CustomersAdmin() {
       {msg && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{msg}</p>}
 
       {filtered.length === 0 ? (
-        <div className="card py-16 text-center text-muted">Клиентов не найдено.</div>
+        <div className="card py-16 text-center text-muted">{tr("admin.customers.empty")}</div>
       ) : (
         <div className="space-y-3">
           {filtered.map((c) => {
@@ -724,22 +730,22 @@ function CustomersAdmin() {
                       </p>
                     </div>
                   </div>
-                  <span className="rounded-full bg-sand px-3 py-1 text-xs text-ink">{c.orderCount} заказов</span>
+                  <span className="rounded-full bg-sand px-3 py-1 text-xs text-ink">{tr("admin.customers.ordersCount", { count: c.orderCount })}</span>
                 </button>
 
                 {open && (
                   <div className="grid gap-6 border-t border-line p-5 md:grid-cols-2">
                     <div>
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">Контакты</h4>
+                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.customers.contacts")}</h4>
                       <dl className="space-y-1 text-sm text-muted">
                         <Row label="WhatsApp" value={c.whatsapp || "—"} />
                         <Row label="Telegram" value={c.telegram || "—"} />
                         <Row label="Email" value={c.email || "—"} />
-                        <Row label="Адрес" value={[c.country, c.city, c.address, c.zip].filter(Boolean).join(", ") || "—"} />
-                        <Row label="Регистрация" value={formatDateShort(c.createdAt)} />
+                        <Row label={tr("admin.orders.address")} value={[c.country, c.city, c.address, c.zip].filter(Boolean).join(", ") || "—"} />
+                        <Row label={tr("admin.customers.registration")} value={formatDateShort(c.createdAt)} />
                       </dl>
                       <div className="mt-4">
-                        <label className="field-label">Комментарий администратора</label>
+                        <label className="field-label">{tr("admin.orders.adminComment")}</label>
                         <textarea
                           defaultValue={c.adminComment}
                           rows={2}
@@ -749,9 +755,9 @@ function CustomersAdmin() {
                       </div>
                     </div>
                     <div>
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">История заказов</h4>
+                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.customers.orderHistory")}</h4>
                       {c.orders.length === 0 ? (
-                        <p className="text-sm text-muted">Заказов пока нет.</p>
+                        <p className="text-sm text-muted">{tr("admin.customers.noOrders")}</p>
                       ) : (
                         <div className="space-y-2 text-sm">
                           {c.orders.map((o) => (
@@ -759,7 +765,7 @@ function CustomersAdmin() {
                               <span className="text-ink">{o.number}</span>
                               <span className="text-muted">
                                 {formatDateShort(o.createdAt)} · {formatPrice(o.total)}
-                                {o.paymentConfirmed ? " · оплачен" : ""}
+                                {o.paymentConfirmed ? tr("admin.customers.paidSuffix") : ""}
                               </span>
                             </div>
                           ))}

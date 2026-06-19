@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Product } from "@/data/products";
+import { useT } from "@/hooks/useTranslation";
 
 type StreamProduct = {
   productId: string;
@@ -31,6 +32,7 @@ export function StreamEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const tr = useT();
   const [stream, setStream] = useState<StreamDetail | null>(null);
   const [title, setTitle] = useState("");
   const [streamDate, setStreamDate] = useState("");
@@ -102,63 +104,63 @@ export function StreamEditor({
     });
     const j = await res.json();
     if (!res.ok) {
-      setMsg(j.error ?? "Ошибка сохранения");
+      setMsg(j.error ?? tr("admin.stream.saveFailed"));
       return;
     }
-    setMsg("Сохранено");
+    setMsg(tr("admin.stream.saved"));
     onSaved();
   }
 
-  if (loading) return <div className="card p-6 text-muted">Загрузка стрима…</div>;
+  if (loading) return <div className="card p-6 text-muted">{tr("admin.stream.loading")}</div>;
 
   return (
     <div className="card p-6 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-medium">Редактирование: {stream?.title}</h2>
-        <button onClick={onClose} className="btn-outline px-3 py-1.5 text-sm">Назад к списку</button>
+        <h2 className="text-lg font-medium">{tr("admin.stream.editTitle", { title: stream?.title ?? "" })}</h2>
+        <button onClick={onClose} className="btn-outline px-3 py-1.5 text-sm">{tr("admin.stream.back")}</button>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div><label className="field-label">Название</label><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-        <div><label className="field-label">Дата стрима</label><input type="date" className="field" value={streamDate} onChange={(e) => setStreamDate(e.target.value)} /></div>
-        <div><label className="field-label">Окончание стрима</label><input type="datetime-local" className="field" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} /></div>
+        <div><label className="field-label">{tr("admin.streams.name")}</label><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+        <div><label className="field-label">{tr("admin.streams.date")}</label><input type="date" className="field" value={streamDate} onChange={(e) => setStreamDate(e.target.value)} /></div>
+        <div><label className="field-label">{tr("admin.streams.end")}</label><input type="datetime-local" className="field" value={endedAt} onChange={(e) => setEndedAt(e.target.value)} /></div>
       </div>
 
       <div className="mt-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-ink">Товары стрима</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-ink">{tr("admin.stream.products")}</h3>
         <div className="mt-3 space-y-2">
           {products.map((p) => (
             <div key={p.productId} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-[1fr_100px_100px_auto] sm:items-end">
               <div>
                 <p className="text-sm font-medium text-ink">{p.name}</p>
-                <p className="text-xs text-muted">База: ₩{p.basePrice.toLocaleString()} · остаток {p.stock}</p>
+                <p className="text-xs text-muted">{tr("admin.stream.basePrice", { price: p.basePrice.toLocaleString(), stock: p.stock })}</p>
               </div>
               <div>
-                <label className="field-label text-[10px]">Цена стрима (KRW)</label>
+                <label className="field-label text-[10px]">{tr("admin.stream.streamPrice")}</label>
                 <input className="field text-sm" value={p.priceOverride} onChange={(e) => setProducts((list) => list.map((x) => x.productId === p.productId ? { ...x, priceOverride: e.target.value } : x))} />
               </div>
               <div>
-                <label className="field-label text-[10px]">Остаток стрима</label>
+                <label className="field-label text-[10px]">{tr("admin.stream.streamStock")}</label>
                 <input className="field text-sm" value={p.streamStock} onChange={(e) => setProducts((list) => list.map((x) => x.productId === p.productId ? { ...x, streamStock: e.target.value } : x))} />
               </div>
-              <button type="button" onClick={() => setProducts((list) => list.filter((x) => x.productId !== p.productId))} className="btn-outline px-2 py-1.5 text-xs">Удалить</button>
+              <button type="button" onClick={() => setProducts((list) => list.filter((x) => x.productId !== p.productId))} className="btn-outline px-2 py-1.5 text-xs">{tr("admin.stream.remove")}</button>
             </div>
           ))}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <select value={addId} onChange={(e) => setAddId(e.target.value)} className="field max-w-xs text-sm">
-            <option value="">Добавить товар…</option>
+            <option value="">{tr("admin.stream.addProduct")}</option>
             {catalog.filter((p) => !products.some((x) => x.productId === p.id)).map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
-          <button type="button" onClick={addProduct} className="btn-outline px-3 py-2 text-sm">Добавить</button>
+          <button type="button" onClick={addProduct} className="btn-outline px-3 py-2 text-sm">{tr("admin.stream.add")}</button>
         </div>
       </div>
 
       {msg && <p className="mt-4 text-sm text-accent">{msg}</p>}
-      <button onClick={save} className="btn-primary mt-6">Сохранить стрим</button>
+      <button onClick={save} className="btn-primary mt-6">{tr("admin.stream.save")}</button>
     </div>
   );
 }

@@ -1,5 +1,8 @@
 export type Dict = Record<string, string>;
 
+import { adminEn, adminKo, adminRu } from "./adminMessages";
+import { countryEn, countryKo, countryRu } from "./countryMessages";
+
 export const ru: Dict = {
   "nav.catalog": "Каталог",
   "nav.streams": "Стримы",
@@ -397,6 +400,8 @@ export const ru: Dict = {
   "errors.notFound": "Страница не найдена",
   "errors.notFoundHint": "Возможно, ссылка устарела или товар больше недоступен.",
   "contacts.floating.label": "Связаться с менеджером",
+  ...adminRu,
+  ...countryRu,
 };
 
 export const en: Dict = {
@@ -796,6 +801,8 @@ export const en: Dict = {
   "errors.notFound": "Page not found",
   "errors.notFoundHint": "The link may be outdated or the product is no longer available.",
   "contacts.floating.label": "Contact manager",
+  ...adminEn,
+  ...countryEn,
 };
 
 export const ko: Dict = {
@@ -1195,4 +1202,6 @@ export const ko: Dict = {
   "errors.notFound": "페이지를 찾을 수 없습니다",
   "errors.notFoundHint": "링크가 만료되었거나 상품을 더 이상 이용할 수 없습니다.",
   "contacts.floating.label": "매니저에게 연락",
+  ...adminKo,
+  ...countryKo,
 };

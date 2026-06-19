@@ -16,7 +16,7 @@ import { exportOrderExcel } from "@/lib/excel";
 import { useExchangeRates } from "@/store/exchangeRates";
 import { convertFromKrw, formatCurrency } from "@/lib/currency";
 import { useT, useSiteText, useLocale } from "@/hooks/useTranslation";
-import { COUNTRIES, deliveryMethodLabel, getDeliveryMethods, defaultMethod, type DeliveryMethodId } from "@/lib/delivery";
+import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, type DeliveryMethodId } from "@/lib/delivery";
 import { Customer, Delivery } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductVisual } from "@/components/ProductVisual";
@@ -71,16 +71,18 @@ export default function CheckoutPage() {
   const total = conversion.total;
 
   const deliveryMethods = useMemo(
-    () => getDeliveryMethods(delivery.country || customer.country),
-    [delivery.country, customer.country]
+    () => getDeliveryMethods(delivery.country || customer.country, locale),
+    [delivery.country, customer.country, locale]
   );
+
+  const countries = useMemo(() => getCountries(locale), [locale]);
 
   useEffect(() => {
     if (delivery.country || customer.country) {
-      const def = defaultMethod(delivery.country || customer.country);
+      const def = defaultMethod(delivery.country || customer.country, locale);
       setMethodId(def.id);
     }
-  }, [delivery.country, customer.country]);
+  }, [delivery.country, customer.country, locale]);
 
   useEffect(() => {
     adminCheck();
@@ -163,8 +165,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    const methodLabel = getDeliveryMethods(delivery.country || customer.country).find((m) => m.id === methodId)?.label
-      ?? deliveryMethodLabel(methodId, "ru");
+    const methodLabel = deliveryMethodLabel(methodId, locale);
 
     setSubmitting(true);
     const res = await createOrder({
@@ -233,7 +234,7 @@ export default function CheckoutPage() {
               <Field label={`${tr("checkout.field.city")} ${tr("checkout.required")}`} value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
             </div>
             <datalist id="countries-list">
-              {COUNTRIES.map((c) => (
+              {countries.map((c) => (
                 <option key={c} value={c} />
               ))}
             </datalist>

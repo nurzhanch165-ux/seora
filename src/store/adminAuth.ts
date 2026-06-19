@@ -20,6 +20,7 @@ export const useAdminAuth = create<AdminAuthState>()((set) => ({
   ready: false,
 
   check: async () => {
+    set({ ready: false });
     try {
       const res = await fetch("/api/admin/me", { cache: "no-store" });
       const json = await res.json().catch(() => ({}));
@@ -37,8 +38,8 @@ export const useAdminAuth = create<AdminAuthState>()((set) => ({
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.ok) {
-      set({ ready: true });
-      return { ok: false, error: json.error ?? "Неверный логин или пароль." };
+      set({ loggedIn: false, ready: true });
+      return { ok: false, error: json.error ?? "auth.invalidCredentials" };
     }
     set({ loggedIn: true, ready: true });
     return { ok: true };

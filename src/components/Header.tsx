@@ -8,6 +8,7 @@ import { site } from "@/data/site";
 import { useCart } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { useAuth } from "@/store/auth";
+import { useAdminAuth } from "@/store/adminAuth";
 import { useHydrated } from "@/lib/useHydrated";
 import { LocaleCurrencyBar } from "./LocaleCurrencyBar";
 import { useT, useLocale } from "@/hooks/useTranslation";
@@ -24,6 +25,8 @@ export function Header() {
   const cartCount = useCart((s) => s.lines.reduce((a, l) => a + l.qty, 0));
   const wishCount = useWishlist((s) => s.ids.length);
   const currentId = useAuth((s) => s.current?.id ?? null);
+  const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
+  const adminCheck = useAdminAuth((s) => s.check);
 
   const [mega, setMega] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -43,6 +46,10 @@ export function Header() {
     setMobileOpen(false);
     setSearchOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    adminCheck();
+  }, [adminCheck]);
 
   function openMega(slug: string) {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -162,7 +169,11 @@ export function Header() {
               <I.Heart />
               {hydrated && wishCount > 0 && <Badge>{wishCount}</Badge>}
             </Link>
-            <Link href={currentId ? "/account" : "/login"} className="icon-btn" aria-label={tr("nav.account")}>
+            <Link
+              href={adminLoggedIn ? "/admin" : currentId ? "/account" : "/login"}
+              className="icon-btn"
+              aria-label={adminLoggedIn ? tr("nav.adminPanel") : tr("nav.account")}
+            >
               <I.User />
             </Link>
             <Link href="/cart" className="icon-btn relative" aria-label={tr("nav.cart")}>

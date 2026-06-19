@@ -16,6 +16,9 @@ function LoginInner() {
   const login = useAuth((s) => s.login);
   const current = useAuth((s) => s.current);
   const adminLogin = useAdminAuth((s) => s.login);
+  const adminCheck = useAdminAuth((s) => s.check);
+  const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
+  const adminReady = useAdminAuth((s) => s.ready);
   const hydrated = useHydrated();
   const tr = useT();
 
@@ -25,8 +28,20 @@ function LoginInner() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    adminCheck();
+  }, [adminCheck]);
+
+  useEffect(() => {
+    if (hydrated && adminReady && adminLoggedIn) router.replace("/admin");
+  }, [hydrated, adminReady, adminLoggedIn, router]);
+
+  useEffect(() => {
     if (hydrated && current) router.replace(next);
   }, [hydrated, current, next, router]);
+
+  if (hydrated && adminReady && adminLoggedIn) {
+    return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
+  }
 
   if (hydrated && current) {
     return <div className="container-site py-20 text-center text-muted">{tr("auth.alreadyLoggedIn")}</div>;
@@ -50,7 +65,8 @@ function LoginInner() {
       return;
     }
 
-    setError(asClient.error ?? tr("auth.invalidCredentials"));
+    const errKey = asClient.error ?? "auth.invalidCredentials";
+    setError(errKey.includes(".") ? tr(errKey) : errKey);
   }
 
   return (

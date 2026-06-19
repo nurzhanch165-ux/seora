@@ -5,6 +5,7 @@ import { Product, Tone } from "@/data/products";
 import { IconKey, sections } from "@/data/categories";
 import { brands } from "@/data/brands";
 import { ProductVisual } from "@/components/ProductVisual";
+import { useT } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
 const ICONS: IconKey[] = [
@@ -114,6 +115,7 @@ export function ProductEditor({
   onSave: (p: Product) => Promise<{ ok: boolean; error?: string }> | void;
   onCancel: () => void;
 }) {
+  const tr = useT();
   const [form, setForm] = useState<EditorState>(() => initial(product));
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -149,7 +151,7 @@ export function ProductEditor({
       const urls = await uploadFiles(files);
       setForm((f) => ({ ...f, images: [...f.images, ...urls] }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить фото.");
+      setError(e instanceof Error ? e.message : tr("admin.product.errUpload"));
     } finally {
       setUploading(false);
     }
@@ -169,8 +171,8 @@ export function ProductEditor({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.name.trim()) return setError("Укажите название товара.");
-    if (!form.price || Number(form.price) <= 0) return setError("Укажите корректную цену.");
+    if (!form.name.trim()) return setError(tr("admin.product.errName"));
+    if (!form.price || Number(form.price) <= 0) return setError(tr("admin.product.errPrice"));
 
     const id = product?.id ?? "ap" + Date.now().toString(36);
     const slug = product?.slug ?? `${translit(form.name) || "tovar"}-${id}`;
@@ -210,14 +212,14 @@ export function ProductEditor({
     setSaving(true);
     const res = await onSave(result);
     setSaving(false);
-    if (res && !res.ok) setError(res.error ?? "Не удалось сохранить товар.");
+    if (res && !res.ok) setError(res.error ?? tr("admin.product.errSave"));
   }
 
   return (
     <form onSubmit={submit} className="space-y-6">
       {/* Фото */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink">Фотографии</h3>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink">{tr("admin.product.photos")}</h3>
         <div className="flex flex-wrap items-center gap-3">
           {form.images.map((src, i) => (
             <div key={i} className="relative h-24 w-24 overflow-hidden rounded-xl border border-line">
@@ -226,7 +228,7 @@ export function ProductEditor({
                 type="button"
                 onClick={() => removeImage(i)}
                 className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink/80 text-paper hover:bg-sale"
-                aria-label="Удалить фото"
+                aria-label={tr("admin.product.removePhoto")}
               >
                 <I.Close size={14} />
               </button>
@@ -234,7 +236,7 @@ export function ProductEditor({
           ))}
           <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line text-xs text-muted hover:border-accent hover:text-accent">
             <I.Plus size={20} />
-            {uploading ? "Загрузка…" : "Добавить"}
+            {uploading ? tr("admin.product.uploading") : tr("admin.product.addPhoto")}
             <input
               type="file"
               accept="image/*"
@@ -244,16 +246,13 @@ export function ProductEditor({
             />
           </label>
         </div>
-        <p className="mt-2 text-xs text-faint">
-          Если фото не добавлены, на витрине показывается фирменная градиентная обложка с иконкой.
-        </p>
+        <p className="mt-2 text-xs text-faint">{tr("admin.product.photosHint")}</p>
       </div>
 
-      {/* Основное */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Название *" value={form.name} onChange={(v) => set("name", v)} />
+        <Field label={tr("admin.product.name")} value={form.name} onChange={(v) => set("name", v)} />
         <div>
-          <label className="field-label">Бренд</label>
+          <label className="field-label">{tr("admin.product.brand")}</label>
           <select value={form.brandSlug} onChange={(e) => set("brandSlug", e.target.value)} className="field">
             {brands.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
           </select>
@@ -262,31 +261,31 @@ export function ProductEditor({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className="field-label">Раздел</label>
+          <label className="field-label">{tr("admin.product.section")}</label>
           <select value={form.sectionSlug} onChange={(e) => changeSection(e.target.value as EditorState["sectionSlug"])} className="field">
             {sections.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="field-label">Категория</label>
+          <label className="field-label">{tr("admin.product.category")}</label>
           <select value={form.categorySlug} onChange={(e) => changeCategory(e.target.value)} className="field">
             {section.categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="field-label">Подкатегория</label>
+          <label className="field-label">{tr("admin.product.subcategory")}</label>
           <select value={form.subSlug} onChange={(e) => set("subSlug", e.target.value)} className="field">
-            <option value="">— не выбрано —</option>
+            <option value="">{tr("admin.product.subcategoryEmpty")}</option>
             {category.subs.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
           </select>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <Field label="Цена (KRW) *" type="number" value={form.price} onChange={(v) => set("price", v)} />
-        <Field label="Артикул / SKU" value={form.sku} onChange={(v) => set("sku", v)} />
-        <Field label="Старая цена" type="number" value={form.oldPrice} onChange={(v) => set("oldPrice", v)} />
-        <Field label="Остаток" type="number" value={form.stock} onChange={(v) => set("stock", v)} />
+        <Field label={tr("admin.product.price")} type="number" value={form.price} onChange={(v) => set("price", v)} />
+        <Field label={tr("admin.product.sku")} value={form.sku} onChange={(v) => set("sku", v)} />
+        <Field label={tr("admin.product.oldPrice")} type="number" value={form.oldPrice} onChange={(v) => set("oldPrice", v)} />
+        <Field label={tr("admin.product.stock")} type="number" value={form.stock} onChange={(v) => set("stock", v)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
@@ -297,22 +296,22 @@ export function ProductEditor({
             onChange={(e) => set("active", e.target.checked)}
             className="h-4 w-4 accent-accent"
           />
-          Товар активен (показывать в каталоге)
+          {tr("admin.product.active")}
         </label>
         {Number(form.stock) <= 0 && (
-          <span className="text-xs text-muted">Остаток 0 — статус «закончился» на витрине</span>
+          <span className="text-xs text-muted">{tr("admin.product.outOfStockHint")}</span>
         )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="field-label">Иконка</label>
+          <label className="field-label">{tr("admin.product.icon")}</label>
           <select value={form.glyph} onChange={(e) => set("glyph", e.target.value as IconKey)} className="field">
             {ICONS.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
         </div>
         <div>
-          <label className="field-label">Тон обложки</label>
+          <label className="field-label">{tr("admin.product.tone")}</label>
           <select value={form.tone} onChange={(e) => set("tone", e.target.value as Tone)} className="field">
             {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
@@ -320,26 +319,26 @@ export function ProductEditor({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <Field label="Объём / кол-во" value={form.volume} onChange={(v) => set("volume", v)} />
-        <Field label="Граммовка" value={form.weight} onChange={(v) => set("weight", v)} />
-        <Field label="Срок годности" value={form.shelfLife} onChange={(v) => set("shelfLife", v)} />
-        <Field label="Хватает на" value={form.monthsSupply} onChange={(v) => set("monthsSupply", v)} />
+        <Field label={tr("admin.product.volume")} value={form.volume} onChange={(v) => set("volume", v)} />
+        <Field label={tr("admin.product.weight")} value={form.weight} onChange={(v) => set("weight", v)} />
+        <Field label={tr("admin.product.shelfLife")} value={form.shelfLife} onChange={(v) => set("shelfLife", v)} />
+        <Field label={tr("admin.product.monthsSupply")} value={form.monthsSupply} onChange={(v) => set("monthsSupply", v)} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Страна" value={form.country} onChange={(v) => set("country", v)} />
-        <Field label="Производитель" value={form.manufacturer} onChange={(v) => set("manufacturer", v)} />
+        <Field label={tr("admin.product.country")} value={form.country} onChange={(v) => set("country", v)} />
+        <Field label={tr("admin.product.manufacturer")} value={form.manufacturer} onChange={(v) => set("manufacturer", v)} />
       </div>
 
-      <Field label="Сертификаты (через запятую)" value={form.certificates} onChange={(v) => set("certificates", v)} />
+      <Field label={tr("admin.product.certificates")} value={form.certificates} onChange={(v) => set("certificates", v)} />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Рейтинг (0–5)" type="number" value={form.rating} onChange={(v) => set("rating", v)} />
-        <Field label="Кол-во отзывов" type="number" value={form.reviews} onChange={(v) => set("reviews", v)} />
+        <Field label={tr("admin.product.rating")} type="number" value={form.rating} onChange={(v) => set("rating", v)} />
+        <Field label={tr("admin.product.reviews")} type="number" value={form.reviews} onChange={(v) => set("reviews", v)} />
       </div>
 
       <div>
-        <label className="field-label">Подборки (бейджи)</label>
+        <label className="field-label">{tr("admin.product.badges")}</label>
         <div className="flex flex-wrap gap-2">
           {ALL_TAGS.map((t) => (
             <button
@@ -348,27 +347,27 @@ export function ProductEditor({
               onClick={() => toggleTag(t)}
               className={`chip ${form.tags.includes(t) ? "border-accent bg-accent-soft text-accent" : ""}`}
             >
-              {t === "new" ? "Новинка" : t === "hit" ? "Хит" : "Скидка"}
+              {t === "new" ? tr("admin.product.tagNew") : t === "hit" ? tr("admin.product.tagHit") : tr("admin.product.tagSale")}
             </button>
           ))}
         </div>
       </div>
 
-      <Area label="Краткое описание" value={form.shortDescription} onChange={(v) => set("shortDescription", v)} rows={2} />
-      <Area label="Полное описание" value={form.fullDescription} onChange={(v) => set("fullDescription", v)} rows={3} />
+      <Area label={tr("admin.product.shortDesc")} value={form.shortDescription} onChange={(v) => set("shortDescription", v)} rows={2} />
+      <Area label={tr("admin.product.fullDesc")} value={form.fullDescription} onChange={(v) => set("fullDescription", v)} rows={3} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Area label="Для чего применяется" value={form.usage} onChange={(v) => set("usage", v)} rows={2} />
-        <Area label="Ожидаемый результат" value={form.result} onChange={(v) => set("result", v)} rows={2} />
+        <Area label={tr("admin.product.usage")} value={form.usage} onChange={(v) => set("usage", v)} rows={2} />
+        <Area label={tr("admin.product.result")} value={form.result} onChange={(v) => set("result", v)} rows={2} />
       </div>
-      <Area label="Способ применения" value={form.howToUse} onChange={(v) => set("howToUse", v)} rows={2} />
+      <Area label={tr("admin.product.howToUse")} value={form.howToUse} onChange={(v) => set("howToUse", v)} rows={2} />
 
       {error && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{error}</p>}
 
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || uploading} className="btn-primary disabled:opacity-60">
-          <I.Check size={18} /> {saving ? "Сохранение…" : product ? "Сохранить изменения" : "Добавить товар"}
+          <I.Check size={18} /> {saving ? tr("admin.product.saving") : product ? tr("admin.product.saveChanges") : tr("admin.product.saveNew")}
         </button>
-        <button type="button" onClick={onCancel} className="btn-outline">Отмена</button>
+        <button type="button" onClick={onCancel} className="btn-outline">{tr("admin.product.cancel")}</button>
       </div>
     </form>
   );

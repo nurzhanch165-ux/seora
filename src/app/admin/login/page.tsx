@@ -1,28 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAdminAuth } from "@/store/adminAuth";
+import { useAdminSession } from "@/hooks/useAdminSession";
+import { useT } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const ready = useAdminAuth((s) => s.ready);
-  const loggedIn = useAdminAuth((s) => s.loggedIn);
-  const check = useAdminAuth((s) => s.check);
+  const tr = useT();
+  const { checked, loggedIn } = useAdminSession("redirectIfAuthed");
   const login = useAdminAuth((s) => s.login);
 
   const [form, setForm] = useState({ login: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    check();
-  }, [check]);
-
-  useEffect(() => {
-    if (ready && loggedIn) router.replace("/admin");
-  }, [ready, loggedIn, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,10 +24,15 @@ export default function AdminLoginPage() {
     const res = await login(form.login, form.password);
     setSubmitting(false);
     if (!res.ok) {
-      setError(res.error ?? "Не удалось войти.");
+      const key = res.error ?? "admin.login.failed";
+      setError(key.includes(".") ? tr(key) : res.error ?? tr("admin.login.failed"));
       return;
     }
     router.replace("/admin");
+  }
+
+  if (!checked || loggedIn) {
+    return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
   }
 
   return (
@@ -45,13 +43,13 @@ export default function AdminLoginPage() {
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent">
               <I.Shield size={26} />
             </span>
-            <h1 className="mt-4 h-display text-2xl">Вход для администратора</h1>
-            <p className="mt-1 text-sm text-muted">Управление заказами, складом и товарами</p>
+            <h1 className="mt-4 h-display text-2xl">{tr("admin.login.title")}</h1>
+            <p className="mt-1 text-sm text-muted">{tr("admin.login.subtitle")}</p>
           </div>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div>
-              <label className="field-label">Логин</label>
+              <label className="field-label">{tr("auth.loginField")}</label>
               <input
                 value={form.login}
                 onChange={(e) => setForm({ ...form, login: e.target.value })}
@@ -61,7 +59,7 @@ export default function AdminLoginPage() {
               />
             </div>
             <div>
-              <label className="field-label">Пароль</label>
+              <label className="field-label">{tr("auth.password")}</label>
               <input
                 type="password"
                 value={form.password}
@@ -72,12 +70,12 @@ export default function AdminLoginPage() {
             </div>
             {error && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{error}</p>}
             <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-60">
-              {submitting ? "Входим…" : "Войти"}
+              {submitting ? tr("auth.signingIn") : tr("auth.signIn")}
             </button>
           </form>
 
           <p className="mt-5 text-center text-xs text-faint">
-            Данные по умолчанию: логин <span className="font-medium text-ink">admin</span>, пароль <span className="font-medium text-ink">admin123</span>
+            {tr("admin.login.defaultsHint", { login: "admin", password: "admin123" })}
           </p>
         </div>
       </div>

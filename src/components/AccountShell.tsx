@@ -85,6 +85,15 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
                 </Link>
               );
             })}
+            {adminLoggedIn && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 border-b border-line px-5 py-3.5 text-sm text-accent transition-colors hover:bg-accent-soft"
+              >
+                <I.Shield size={18} />
+                {tr("account.goToAdmin")}
+              </Link>
+            )}
             <button
               onClick={() => { logout(); router.push("/"); }}
               className="flex w-full items-center gap-3 px-5 py-3.5 text-sm text-muted transition-colors hover:bg-ink/5 hover:text-sale"
