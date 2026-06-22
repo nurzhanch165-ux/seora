@@ -30,6 +30,8 @@ export function NotificationSettings() {
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [pushState, setPushState] = useState<"idle" | "on" | "off" | "unsupported">("idle");
   const [tiktokUrl, setTiktokUrl] = useState("https://www.tiktok.com/@shopkorea8");
+  const [telegramUrl, setTelegramUrl] = useState<string | null>(null);
+  const [telegramConnected, setTelegramConnected] = useState(false);
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
@@ -40,6 +42,12 @@ export function NotificationSettings() {
     fetch("/api/notifications/config")
       .then((r) => r.json())
       .then((j) => { if (j.tiktokUrl) setTiktokUrl(j.tiktokUrl); });
+    fetch(`/api/telegram/link?customerId=${encodeURIComponent(account.id)}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.url) setTelegramUrl(j.url);
+        setTelegramConnected(Boolean(j.connected));
+      });
   }, [account?.id]);
 
   async function enablePush() {
@@ -94,6 +102,16 @@ export function NotificationSettings() {
         <button type="button" onClick={enablePush} className="btn-outline">
           <I.Sparkle size={18} /> {tr("notifications.enablePush")}
         </button>
+        {telegramUrl && (
+          <a
+            href={telegramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`btn-outline ${telegramConnected ? "border-emerald-400 text-emerald-700" : ""}`}
+          >
+            <I.Telegram size={18} /> {telegramConnected ? tr("notifications.telegramConnected") : tr("notifications.connectTelegram")}
+          </a>
+        )}
         <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="btn-outline">
           TikTok
         </a>

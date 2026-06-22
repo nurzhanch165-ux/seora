@@ -436,6 +436,7 @@ function StreamsAdmin() {
 
   useEffect(() => {
     fetch("/api/streams").then((r) => r.json()).then((j) => setStreams(j.streams ?? []));
+    fetch("/api/admin/telegram/setup", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
   }, []);
 
   async function createStream() {
@@ -480,6 +481,7 @@ function StreamsAdmin() {
       count: String(j.recipients ?? 0),
       email: String(j.sentEmail ?? 0),
       push: String(j.sentPush ?? 0),
+      telegram: String(j.sentTelegram ?? 0),
     }));
   }
 

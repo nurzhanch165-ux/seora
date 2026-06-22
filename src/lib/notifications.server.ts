@@ -1,6 +1,11 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import webpush from "web-push";
+import {
+  formatStreamTelegramMessage,
+  sendTelegramMessage,
+  telegramConfigured,
+} from "@/lib/telegram.server";
 
 const DEFAULT_TIKTOK = "https://www.tiktok.com/@shopkorea8";
 
@@ -52,12 +57,13 @@ export async function announceStream(input: AnnounceInput) {
 
   const { data: customers } = await admin
     .from("customers")
-    .select("id, email, agree_marketing, first_name")
+    .select("id, email, agree_marketing, first_name, telegram_chat_id")
     .eq("agree_marketing", true);
 
   const recipients = customers ?? [];
   let sentEmail = 0;
   let sentPush = 0;
+  let sentTelegram = 0;
   let sentInApp = 0;
 
   const pushReady = configureWebPush();
@@ -104,6 +110,11 @@ export async function announceStream(input: AnnounceInput) {
         }
       }
     }
+
+    if (telegramConfigured() && customer.telegram_chat_id) {
+      const tgText = formatStreamTelegramMessage(title, body, link);
+      if (await sendTelegramMessage(customer.telegram_chat_id, tgText)) sentTelegram++;
+    }
   }
 
   await admin.from("stream_announcements").insert({
@@ -113,12 +124,14 @@ export async function announceStream(input: AnnounceInput) {
     tiktok_url: tiktokUrl,
     sent_email: sentEmail,
     sent_push: sentPush,
+    sent_telegram: sentTelegram,
   });
 
   return {
     recipients: recipients.length,
     sentEmail,
     sentPush,
+    sentTelegram,
     sentInApp,
     tiktokUrl,
   };
