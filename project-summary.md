@@ -565,6 +565,7 @@ git push
 | `24abfa3` | i18n админки, checkout стран/доставки, admin session fix |
 | `580c6bc` | fix EN перевод «Интерьер» |
 | **`af253a3`** | **текущий production** — единый `/login`, выход в обычный вход |
+| **`685b3de`** | **локально (не push)** — обновлён `project-summary.md` (handoff сессии 10) |
 
 ### Что можно доделать дальше
 
@@ -609,7 +610,7 @@ git push
 ```
 Проект SonyShopKorea — Next.js 14 + Supabase + Vercel.
 Production: https://sonyshopkorea.vercel.app (коммит af253a3).
-Handoff: project-summary.md — разделы 11-decies, 12, 13.
+Handoff: project-summary.md — разделы 11-decies, 12, 13 (коммит docs: 685b3de, локально ahead of origin).
 ТЗ: c:\Users\nurzh\Downloads\Техническое задание по доработке сайта SonyShopKorea.pdf
 
 Сделано в сессии 10 (19–20 июня 2026):
