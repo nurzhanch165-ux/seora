@@ -14,7 +14,9 @@ import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportI
 import { buildStreamPositionMap, type StreamPositionMap } from "@/lib/excelCore";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ProductEditor } from "@/components/admin/ProductEditor";
+import { CategoryEditor } from "@/components/admin/CategoryEditor";
 import { StreamEditor } from "@/components/admin/StreamEditor";
+import { useCatalogTree } from "@/store/catalogTree";
 import { useAdminSession } from "@/hooks/useAdminSession";
 import { useT, useLocale } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
@@ -30,13 +32,15 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("orders");
 
   const loadCatalog = useCatalog((s) => s.load);
+  const loadCatalogTree = useCatalogTree((s) => s.load);
 
   useEffect(() => {
     if (checked && loggedIn) {
       loadAll();
       loadCatalog();
+      loadCatalogTree();
     }
-  }, [checked, loggedIn, loadAll, loadCatalog]);
+  }, [checked, loggedIn, loadAll, loadCatalog, loadCatalogTree]);
 
   if (!checked) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
   if (!loggedIn) return <div className="container-site py-20 text-center text-muted">{tr("admin.redirecting")}</div>;
@@ -424,6 +428,11 @@ function StreamsAdmin() {
   const [endedAt, setEndedAt] = useState(new Date().toISOString().slice(0, 16));
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [msg, setMsg] = useState("");
+  const [announceTitle, setAnnounceTitle] = useState("");
+  const [announceBody, setAnnounceBody] = useState("");
+  const [announceTiktok, setAnnounceTiktok] = useState("https://www.tiktok.com/@shopkorea8");
+  const [announceBusy, setAnnounceBusy] = useState(false);
+  const [announceResult, setAnnounceResult] = useState("");
 
   useEffect(() => {
     fetch("/api/streams").then((r) => r.json()).then((j) => setStreams(j.streams ?? []));
@@ -447,6 +456,31 @@ function StreamsAdmin() {
     setTitle("");
     setSelectedProducts([]);
     setMsg(tr("admin.streams.created"));
+  }
+
+  async function sendAnnouncement() {
+    setAnnounceBusy(true);
+    setAnnounceResult("");
+    const res = await fetch("/api/admin/announce", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: announceTitle || tr("admin.streams.announceDefaultTitle"),
+        body: announceBody,
+        tiktokUrl: announceTiktok,
+      }),
+    });
+    const j = await res.json();
+    setAnnounceBusy(false);
+    if (!res.ok) {
+      setAnnounceResult(j.error ?? tr("errors.generic"));
+      return;
+    }
+    setAnnounceResult(tr("admin.streams.announceSent", {
+      count: String(j.recipients ?? 0),
+      email: String(j.sentEmail ?? 0),
+      push: String(j.sentPush ?? 0),
+    }));
   }
 
   if (editId) {
@@ -489,6 +523,29 @@ function StreamsAdmin() {
       </div>
 
       <div className="card p-6">
+        <h2 className="text-lg font-medium">{tr("admin.streams.announceTitle")}</h2>
+        <p className="mt-1 text-sm text-muted">{tr("admin.streams.announceHint")}</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="field-label">{tr("admin.streams.announceHeading")}</label>
+            <input className="field" value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} placeholder={tr("admin.streams.announceDefaultTitle")} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="field-label">{tr("admin.streams.announceMessage")}</label>
+            <textarea className="field resize-none" rows={3} value={announceBody} onChange={(e) => setAnnounceBody(e.target.value)} placeholder={tr("admin.streams.announceDefaultBody")} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="field-label">TikTok</label>
+            <input className="field" value={announceTiktok} onChange={(e) => setAnnounceTiktok(e.target.value)} />
+          </div>
+        </div>
+        {announceResult && <p className="mt-3 text-sm text-accent">{announceResult}</p>}
+        <button onClick={sendAnnouncement} disabled={announceBusy} className="btn-accent mt-4">
+          {announceBusy ? tr("admin.streams.announceSending") : tr("admin.streams.announceSend")}
+        </button>
+      </div>
+
+      <div className="card p-6">
         <h2 className="text-lg font-medium">{tr("admin.streams.allTitle", { count: streams.length })}</h2>
         <div className="mt-4 space-y-2">
           {streams.map((s) => (
@@ -509,6 +566,35 @@ function StreamsAdmin() {
   );
 }
 
+function ProductsPanelNav({
+  panel,
+  setPanel,
+  tr,
+}: {
+  panel: "products" | "catalog";
+  setPanel: (p: "products" | "catalog") => void;
+  tr: (key: string) => string;
+}) {
+  return (
+    <div className="mb-5 flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => setPanel("products")}
+        className={`chip ${panel === "products" ? "border-accent bg-accent-soft text-accent" : ""}`}
+      >
+        {tr("admin.products.tabProducts")}
+      </button>
+      <button
+        type="button"
+        onClick={() => setPanel("catalog")}
+        className={`chip ${panel === "catalog" ? "border-accent bg-accent-soft text-accent" : ""}`}
+      >
+        {tr("admin.products.tabCatalog")}
+      </button>
+    </div>
+  );
+}
+
 function ProductsAdmin() {
   const tr = useT();
   const all = useCatalog((s) => s.products);
@@ -516,6 +602,7 @@ function ProductsAdmin() {
   const updateProduct = useCatalog((s) => s.updateProduct);
   const removeProduct = useCatalog((s) => s.removeProduct);
 
+  const [panel, setPanel] = useState<"products" | "catalog">("products");
   // mode: "list" | "new" | id редактируемого товара
   const [mode, setMode] = useState<"list" | "new" | string>("list");
   const [query, setQuery] = useState("");
@@ -536,39 +623,55 @@ function ProductsAdmin() {
 
   if (mode === "new") {
     return (
-      <div className="card p-6 md:p-8">
-        <h2 className="mb-6 text-lg font-medium">{tr("admin.products.newTitle")}</h2>
-        <ProductEditor
-          onSave={async (p) => {
-            const res = await addProduct(p);
-            if (res.ok) setMode("list");
-            return res;
-          }}
-          onCancel={() => setMode("list")}
-        />
+      <div>
+        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} />
+        <div className="card p-6 md:p-8">
+          <h2 className="mb-6 text-lg font-medium">{tr("admin.products.newTitle")}</h2>
+          <ProductEditor
+            onSave={async (p) => {
+              const res = await addProduct(p);
+              if (res.ok) setMode("list");
+              return res;
+            }}
+            onCancel={() => setMode("list")}
+          />
+        </div>
       </div>
     );
   }
 
   if (editing) {
     return (
-      <div className="card p-6 md:p-8">
-        <h2 className="mb-6 text-lg font-medium">{tr("admin.products.editTitle", { name: editing.name })}</h2>
-        <ProductEditor
-          product={editing}
-          onSave={async (p) => {
-            const res = await updateProduct(p.id, p);
-            if (res.ok) setMode("list");
-            return res;
-          }}
-          onCancel={() => setMode("list")}
-        />
+      <div>
+        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} />
+        <div className="card p-6 md:p-8">
+          <h2 className="mb-6 text-lg font-medium">{tr("admin.products.editTitle", { name: editing.name })}</h2>
+          <ProductEditor
+            product={editing}
+            onSave={async (p) => {
+              const res = await updateProduct(p.id, p);
+              if (res.ok) setMode("list");
+              return res;
+            }}
+            onCancel={() => setMode("list")}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (panel === "catalog") {
+    return (
+      <div>
+        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} />
+        <CategoryEditor />
       </div>
     );
   }
 
   return (
     <div>
+      <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-medium">{tr("admin.products.catalogTitle", { count: all.length })}</h2>

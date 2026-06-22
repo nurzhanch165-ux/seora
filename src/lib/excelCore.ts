@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { Order, OrderSource, paymentStatusLabel, statusLabel } from "./types";
 import { site } from "@/data/site";
 
@@ -30,7 +30,6 @@ function clientName(c: Order["customer"]) {
   return `${c.lastName} ${c.firstName} ${c.middleName}`.trim();
 }
 
-/** Имя для склада: «Ainura Mandaeva» / «Alia» — как в рабочем Excel */
 function clientDisplayName(c: Order["customer"]) {
   const name = `${c.firstName}${c.lastName ? ` ${c.lastName}` : ""}`.trim();
   return name || clientName(c);
@@ -81,7 +80,7 @@ function deliveryExcel(method: string) {
   if (m.includes("карго") || m.includes("cargo") || m.includes("ck")) return "карго";
   if (m.includes("авиа") || m.includes("avia") || m.includes(" k")) return "авиа";
   if (m.includes("ems")) return "EMS";
-  if (m.includes("внутри") || m.includes("domestic")) return "внутри страны";
+  if (m.includes("внутри") || m.includes("domestic") || m.includes("коре")) return "внутри страны";
   return method;
 }
 
@@ -92,11 +91,43 @@ function fmtKrw(n: number) {
   return `₩ ${withSpaces},${decPart}`;
 }
 
+type PaymentTone = "paid" | "awaiting" | "cancelled";
+
+function paymentTone(order: Order): PaymentTone {
+  if (order.status === "cancelled" || order.status === "returned") return "cancelled";
+  if (order.paymentConfirmed) return "paid";
+  return "awaiting";
+}
+
+const PAYMENT_FILLS: Record<PaymentTone, string> = {
+  paid: "C6EFCE",
+  awaiting: "FFEB9C",
+  cancelled: "FFC7CE",
+};
+
+function setCellFill(ws: XLSX.WorkSheet, row: number, col: number, rgb: string) {
+  const addr = XLSX.utils.encode_cell({ r: row, c: col });
+  if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+  ws[addr].s = {
+    fill: { patternType: "solid", fgColor: { rgb } },
+  };
+}
+
+function applyPaymentColumnStyles(
+  ws: XLSX.WorkSheet,
+  rows: { row: number; order: Order }[],
+  paymentCol: number
+) {
+  rows.forEach(({ row, order }) => {
+    setCellFill(ws, row, paymentCol, PAYMENT_FILLS[paymentTone(order)]);
+  });
+}
+
 function buildWarehouseSheetAoa(
   orders: Order[],
   dateLabel?: string,
   streamPositions?: StreamPositionMap
-): (string | number)[][] {
+): { aoa: (string | number)[][]; paymentRows: { row: number; order: Order }[] } {
   const dateStr = displayDateLabel(dateLabel, orders[0]?.createdAt);
   const header: (string | number)[][] = [
     [`ДАТА: ${dateStr}`],
@@ -117,11 +148,17 @@ function buildWarehouseSheetAoa(
   ];
 
   const rows: (string | number)[][] = [];
+  const paymentRows: { row: number; order: Order }[] = [];
+  const headerOffset = header.length;
+
   orders.forEach((o) => {
     const c = o.customer;
     const d = o.delivery;
+    const payLabel = o.paymentConfirmed ? "Оплачено" : paymentTone(o) === "cancelled" ? "Отменено" : "Ожидает";
+
     o.items.forEach((it, idx) => {
       const unit = it.priceKrw ?? it.price;
+      paymentRows.push({ row: headerOffset + rows.length, order: o });
       rows.push([
         o.number,
         clientDisplayName(c),
@@ -133,18 +170,37 @@ function buildWarehouseSheetAoa(
         fmtKrw(unit * it.qty),
         deliveryExcel(d?.method || ""),
         d?.address || "",
-        o.paymentConfirmed ? "Оплачено" : "",
+        payLabel,
       ]);
     });
+
+    const fee = d?.feeKrw ?? 0;
+    if (fee > 0) {
+      paymentRows.push({ row: headerOffset + rows.length, order: o });
+      rows.push([
+        o.number,
+        clientDisplayName(c),
+        c.phone,
+        "",
+        "Доставка",
+        1,
+        fmtKrw(fee),
+        fmtKrw(fee),
+        deliveryExcel(d?.method || ""),
+        d?.address || "",
+        payLabel,
+      ]);
+    }
   });
 
-  return [...header, ...rows];
+  return { aoa: [...header, ...rows], paymentRows };
 }
 
 export function buildOrderWorkbook(order: Order, opts?: { streamPositions?: StreamPositionMap }) {
-  const aoa = buildWarehouseSheetAoa([order], fileDate(order.createdAt), opts?.streamPositions);
+  const { aoa, paymentRows } = buildWarehouseSheetAoa([order], fileDate(order.createdAt), opts?.streamPositions);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = autoWidth(aoa);
+  applyPaymentColumnStyles(ws, paymentRows, 10);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Заказ");
@@ -160,7 +216,7 @@ export function buildDailyOrdersWorkbook(orders: Order[], dateLabel?: string, fi
     [
       "№", "Дата заказа", "Время заказа", "Номер заказа", "Источник", "Стрим",
       "Клиент", "Телефон", "WhatsApp", "Telegram", "Страна", "Город", "Адрес", "Индекс", "Email",
-      "Способ доставки", "Валюта", "Курс", "Товар", "Артикул", "Кол-во",
+      "Способ доставки", "Доставка ₩", "Валюта", "Курс", "Товар", "Артикул", "Кол-во",
       "Цена KRW", "Цена в валюте", "Сумма по товару",
       "Сумма до комиссии", "Комиссия 3%", "Итого с комиссией",
       "Статус оплаты", "Статус заказа", "Комментарий клиента", "Комментарий админа",
@@ -168,17 +224,23 @@ export function buildDailyOrdersWorkbook(orders: Order[], dateLabel?: string, fi
   ];
 
   const rows: (string | number)[][] = [];
+  const paymentRows: { row: number; order: Order }[] = [];
+  const headerOffset = header.length;
   let rowNum = 0;
 
   orders.forEach((o) => {
     const c = o.customer;
     const d = o.delivery;
+    const deliveryFee = d?.feeKrw ?? 0;
+    const itemsTotalKrw = o.items.reduce((s, it) => s + (it.priceKrw ?? it.price) * it.qty, 0);
     const totalAfter = o.totalConverted ?? o.total;
     const fee = o.feeAmount ?? 0;
     const totalBefore = totalAfter - fee;
+
     o.items.forEach((it, idx) => {
       rowNum++;
       const isFirst = idx === 0;
+      if (isFirst) paymentRows.push({ row: headerOffset + rows.length, order: o });
       rows.push([
         rowNum,
         isFirst ? fmtDate(o.createdAt) : "",
@@ -196,6 +258,7 @@ export function buildDailyOrdersWorkbook(orders: Order[], dateLabel?: string, fi
         isFirst ? (d?.zip || "") : "",
         isFirst ? (c.email || "") : "",
         isFirst ? deliveryExcel(d?.method || "") : "",
+        isFirst ? (deliveryFee > 0 ? deliveryFee : "") : "",
         isFirst ? (o.currencyCode ?? "KRW") : "",
         isFirst ? (o.exchangeRate ?? 1) : "",
         it.name,
@@ -219,6 +282,7 @@ export function buildDailyOrdersWorkbook(orders: Order[], dateLabel?: string, fi
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = autoWidth(aoa);
   ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 31 } }];
+  applyPaymentColumnStyles(ws, paymentRows, 28);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Заказы");
@@ -231,9 +295,10 @@ export function buildWarehouseWorkbook(
   dateLabel?: string,
   opts?: { streamPositions?: StreamPositionMap; fileSuffix?: string }
 ) {
-  const aoa = buildWarehouseSheetAoa(orders, dateLabel, opts?.streamPositions);
+  const { aoa, paymentRows } = buildWarehouseSheetAoa(orders, dateLabel, opts?.streamPositions);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = autoWidth(aoa);
+  applyPaymentColumnStyles(ws, paymentRows, 10);
 
   const suffix = opts?.fileSuffix ? `_${opts.fileSuffix}` : "";
   const fileDateStr = dateLabel?.match(/^(\d{4}_\d{2}_\d{2})/)?.[1] ?? fileDate(orders[0]?.createdAt);

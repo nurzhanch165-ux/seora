@@ -102,6 +102,8 @@ export type Delivery = {
   recipientPhone: string;
   method: string;
   comment: string;
+  feeKrw?: number;
+  feeConverted?: number;
 };
 
 export type OrderItem = {

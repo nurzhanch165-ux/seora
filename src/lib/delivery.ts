@@ -121,3 +121,14 @@ export function methodById(country: string, id: DeliveryMethodId, locale: Locale
 export function defaultMethod(country: string, locale: Locale = "ru"): DeliveryMethod {
   return getDeliveryMethods(country, locale)[0];
 }
+
+/** Фиксированная доставка внутри Кореи (₩), можно переопределить через env */
+export function domesticDeliveryFeeKrw(): number {
+  const raw = process.env.NEXT_PUBLIC_DOMESTIC_DELIVERY_KRW ?? "3500";
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : 3500;
+}
+
+export function isDomesticDelivery(methodId: DeliveryMethodId): boolean {
+  return methodId === "domestic";
+}

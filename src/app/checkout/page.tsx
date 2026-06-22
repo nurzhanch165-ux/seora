@@ -16,7 +16,7 @@ import { exportOrderExcel } from "@/lib/excel";
 import { useExchangeRates } from "@/store/exchangeRates";
 import { convertFromKrw, formatCurrency } from "@/lib/currency";
 import { useT, useSiteText, useLocale } from "@/hooks/useTranslation";
-import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, type DeliveryMethodId } from "@/lib/delivery";
+import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, domesticDeliveryFeeKrw, isDomesticDelivery, type DeliveryMethodId } from "@/lib/delivery";
 import { Customer, Delivery } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductVisual } from "@/components/ProductVisual";
@@ -66,9 +66,12 @@ export default function CheckoutPage() {
     () => lines.map((l) => ({ line: l, product: catalog.find((p) => p.id === l.productId) })).filter((x) => x.product),
     [lines, catalog]
   );
-  const totalKrw = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
+  const productsTotalKrw = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
+  const deliveryFeeKrw = isDomesticDelivery(methodId) ? domesticDeliveryFeeKrw() : 0;
+  const totalKrw = productsTotalKrw + deliveryFeeKrw;
   const conversion = convertFromKrw(totalKrw, currency, rates);
   const total = conversion.total;
+  const deliveryFeeDisplay = convertFromKrw(deliveryFeeKrw, currency, rates).total;
 
   const deliveryMethods = useMemo(
     () => getDeliveryMethods(delivery.country || customer.country, locale),
@@ -167,13 +170,21 @@ export default function CheckoutPage() {
 
     const methodLabel = deliveryMethodLabel(methodId, locale);
 
+    const deliveryFeeConv = convertFromKrw(deliveryFeeKrw, currency, rates);
+
     setSubmitting(true);
     const res = await createOrder({
       number: genNumber(),
       createdAt: new Date().toISOString(),
       customerId: account?.id ?? null,
       customer: { ...customer, email: customer.email?.trim() || undefined },
-      delivery: { ...delivery, method: methodLabel, comment },
+      delivery: {
+        ...delivery,
+        method: methodLabel,
+        comment,
+        feeKrw: deliveryFeeKrw,
+        feeConverted: deliveryFeeConv.total,
+      },
       items: items.map((x) => {
         const krw = x.product!.price;
         const conv = convertFromKrw(krw, currency, rates);
@@ -312,13 +323,19 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div className="border-t border-line p-5">
+            <div className="border-t border-line p-5 space-y-2">
+              {deliveryFeeKrw > 0 && (
+                <div className="flex justify-between text-sm text-muted">
+                  <span>{tr("checkout.deliveryFee")}</span>
+                  <span>{formatCurrency(deliveryFeeDisplay, currency)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-base font-semibold text-ink">
                 <span>{tr("checkout.totalWithCurrency", { currency })}</span>
                 <span>{formatCurrency(total, currency)}</span>
               </div>
               {currency !== "KRW" && (
-                <p className="mt-1 text-xs text-muted">{tr("checkout.feeNote", { amount: formatCurrency(totalKrw, "KRW") })}</p>
+                <p className="text-xs text-muted">{tr("checkout.feeNote", { amount: formatCurrency(totalKrw, "KRW") })}</p>
               )}
               {error && (
                 <p className="mt-4 rounded-lg bg-sale/10 px-3 py-2 text-xs text-sale">{error}</p>

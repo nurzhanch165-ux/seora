@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { Product, Tone } from "@/data/products";
-import { IconKey, sections } from "@/data/categories";
-import { brands } from "@/data/brands";
+import { IconKey, sections as STATIC_SECTIONS } from "@/data/categories";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useT } from "@/hooks/useTranslation";
+import { useCatalogExtras } from "@/store/catalogTree";
+import { brandSlugFromName, mergeBrands, mergeSections } from "@/lib/catalogTree";
 import * as I from "@/components/icons";
 
 const ICONS: IconKey[] = [
@@ -43,7 +44,7 @@ async function uploadFiles(files: FileList): Promise<string[]> {
 
 type EditorState = {
   name: string;
-  brandSlug: string;
+  brandName: string;
   sectionSlug: "cosmetics" | "health" | "home" | "clothes" | "shoes";
   categorySlug: string;
   subSlug: string;
@@ -72,11 +73,11 @@ type EditorState = {
   active: boolean;
 };
 
-function initial(product?: Product): EditorState {
-  const firstSection = sections[0];
+function initial(product?: Product, brandLabel?: string): EditorState {
+  const firstSection = STATIC_SECTIONS[0];
   return {
     name: product?.name ?? "",
-    brandSlug: product?.brandSlug ?? brands[0].slug,
+    brandName: brandLabel ?? "",
     sectionSlug: product?.sectionSlug ?? firstSection.slug,
     categorySlug: product?.categorySlug ?? firstSection.categories[0].slug,
     subSlug: product?.subSlug ?? "",
@@ -116,14 +117,19 @@ export function ProductEditor({
   onCancel: () => void;
 }) {
   const tr = useT();
-  const [form, setForm] = useState<EditorState>(() => initial(product));
+  const extras = useCatalogExtras();
+  const allBrands = useMemo(() => mergeBrands(extras), [extras]);
+  const catalogSections = useMemo(() => mergeSections(extras), [extras]);
+  const [form, setForm] = useState<EditorState>(() =>
+    initial(product, product ? allBrands.find((b) => b.slug === product.brandSlug)?.name ?? product.brandSlug : "")
+  );
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const section = useMemo(
-    () => sections.find((s) => s.slug === form.sectionSlug) ?? sections[0],
-    [form.sectionSlug]
+    () => catalogSections.find((s) => s.slug === form.sectionSlug) ?? catalogSections[0],
+    [catalogSections, form.sectionSlug]
   );
   const category = useMemo(
     () => section.categories.find((c) => c.slug === form.categorySlug) ?? section.categories[0],
@@ -135,7 +141,7 @@ export function ProductEditor({
   }
 
   function changeSection(slug: EditorState["sectionSlug"]) {
-    const s = sections.find((x) => x.slug === slug) ?? sections[0];
+    const s = catalogSections.find((x) => x.slug === slug) ?? catalogSections[0];
     setForm((f) => ({ ...f, sectionSlug: slug, categorySlug: s.categories[0].slug, subSlug: "" }));
   }
 
@@ -177,11 +183,16 @@ export function ProductEditor({
     const id = product?.id ?? "ap" + Date.now().toString(36);
     const slug = product?.slug ?? `${translit(form.name) || "tovar"}-${id}`;
 
-    const result: Product = {
+    const brandSlug =
+      allBrands.find((b) => b.name.toLowerCase() === form.brandName.trim().toLowerCase())?.slug
+      ?? brandSlugFromName(form.brandName.trim() || "brand");
+
+    const result = {
       id,
       slug,
       name: form.name.trim(),
-      brandSlug: form.brandSlug,
+      brandSlug,
+      brandDisplayName: form.brandName.trim(),
       sectionSlug: form.sectionSlug,
       categorySlug: form.categorySlug,
       subSlug: form.subSlug,
@@ -208,7 +219,7 @@ export function ProductEditor({
       tags: form.tags,
       sku: form.sku.trim() || id,
       active: form.active,
-    };
+    } as Product & { brandDisplayName?: string };
     setSaving(true);
     const res = await onSave(result);
     setSaving(false);
@@ -253,9 +264,19 @@ export function ProductEditor({
         <Field label={tr("admin.product.name")} value={form.name} onChange={(v) => set("name", v)} />
         <div>
           <label className="field-label">{tr("admin.product.brand")}</label>
-          <select value={form.brandSlug} onChange={(e) => set("brandSlug", e.target.value)} className="field">
-            {brands.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
-          </select>
+          <input
+            list="brand-list"
+            value={form.brandName}
+            onChange={(e) => set("brandName", e.target.value)}
+            className="field"
+            placeholder={tr("admin.product.brandPlaceholder")}
+          />
+          <datalist id="brand-list">
+            {allBrands.map((b) => (
+              <option key={b.slug} value={b.name} />
+            ))}
+          </datalist>
+          <p className="mt-1 text-xs text-faint">{tr("admin.product.brandHint")}</p>
         </div>
       </div>
 
@@ -263,7 +284,7 @@ export function ProductEditor({
         <div>
           <label className="field-label">{tr("admin.product.section")}</label>
           <select value={form.sectionSlug} onChange={(e) => changeSection(e.target.value as EditorState["sectionSlug"])} className="field">
-            {sections.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
+            {catalogSections.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
           </select>
         </div>
         <div>

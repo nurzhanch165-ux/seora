@@ -9,6 +9,7 @@ import { getStatusLabel, statusTone } from "@/lib/types";
 import { exportOrderExcel } from "@/lib/excel";
 import { AccountShell } from "@/components/AccountShell";
 import { PaymentUpload } from "@/components/PaymentUpload";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { useT, useLocale } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
@@ -28,6 +29,9 @@ export default function AccountOrdersPage() {
 
   return (
     <AccountShell title={tr("account.myOrders")}>
+      <div className="mb-8">
+        <NotificationSettings />
+      </div>
       {myOrders.length === 0 ? (
         <div className="card flex flex-col items-center gap-4 py-20 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent">
