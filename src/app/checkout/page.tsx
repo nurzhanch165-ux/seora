@@ -16,7 +16,8 @@ import { exportOrderExcel } from "@/lib/excel";
 import { useExchangeRates } from "@/store/exchangeRates";
 import { convertFromKrw, formatCurrency } from "@/lib/currency";
 import { useT, useSiteText, useLocale } from "@/hooks/useTranslation";
-import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, domesticDeliveryFeeKrw, isDomesticDelivery, type DeliveryMethodId } from "@/lib/delivery";
+import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, calculateDeliveryFeeKrw, isWeightBasedDelivery, type DeliveryMethodId } from "@/lib/delivery";
+import { cartTotalWeightKg, formatWeightKg } from "@/lib/productWeight";
 import { Customer, Delivery } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductVisual } from "@/components/ProductVisual";
@@ -67,7 +68,15 @@ export default function CheckoutPage() {
     [lines, catalog]
   );
   const productsTotalKrw = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
-  const deliveryFeeKrw = isDomesticDelivery(methodId) ? domesticDeliveryFeeKrw() : 0;
+  const cartWeightKg = useMemo(
+    () => cartTotalWeightKg(items.map((x) => ({ product: x.product!, qty: x.line.qty }))),
+    [items]
+  );
+  const deliveryCalc = useMemo(
+    () => calculateDeliveryFeeKrw(methodId, cartWeightKg, rates),
+    [methodId, cartWeightKg, rates]
+  );
+  const deliveryFeeKrw = deliveryCalc.feeKrw;
   const totalKrw = productsTotalKrw + deliveryFeeKrw;
   const conversion = convertFromKrw(totalKrw, currency, rates);
   const total = conversion.total;
@@ -184,6 +193,7 @@ export default function CheckoutPage() {
         comment,
         feeKrw: deliveryFeeKrw,
         feeConverted: deliveryFeeConv.total,
+        totalWeightKg: cartWeightKg,
       },
       items: items.map((x) => {
         const krw = x.product!.price;
@@ -324,9 +334,22 @@ export default function CheckoutPage() {
               ))}
             </div>
             <div className="border-t border-line p-5 space-y-2">
+              {cartWeightKg > 0 && (
+                <div className="flex justify-between text-sm text-muted">
+                  <span>{tr("checkout.cartWeight")}</span>
+                  <span>{formatWeightKg(cartWeightKg, locale)}</span>
+                </div>
+              )}
               {deliveryFeeKrw > 0 && (
                 <div className="flex justify-between text-sm text-muted">
-                  <span>{tr("checkout.deliveryFee")}</span>
+                  <span>
+                    {isWeightBasedDelivery(methodId)
+                      ? tr("checkout.deliveryFeeWeight", {
+                          weight: formatWeightKg(deliveryCalc.billableKg, locale),
+                          rate: String(deliveryCalc.usdPerKg ?? ""),
+                        })
+                      : tr("checkout.deliveryFee")}
+                  </span>
                   <span>{formatCurrency(deliveryFeeDisplay, currency)}</span>
                 </div>
               )}

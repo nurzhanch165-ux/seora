@@ -20,20 +20,19 @@ export function HomePageContent() {
   return (
     <>
       <HomeHero />
+      <StreamsPromo />
       <BrandMarquee />
       <AboutBlock />
       <CategoriesBlock />
       <WhyUsBlock />
       <HowToOrderBlock />
 
-      <section className="container-site mt-20 sm:mt-28">
+      <section className="container-site mt-16 sm:mt-20">
         <Reveal>
           <HomeSectionHeading titleKey="home.hits" href="/sale" hrefLabelKey="home.hits" />
         </Reveal>
         <FeaturedGrid kind="hit" />
       </section>
-
-      <StreamsPromo />
 
       <section className="container-site mt-20 sm:mt-28">
         <Reveal>
@@ -226,7 +225,7 @@ function StreamsPromo() {
   const tr = useT();
 
   return (
-    <section className="container-site mt-20 sm:mt-28">
+    <section className="container-site mt-10 sm:mt-14">
       <Reveal>
         <div className="relative min-h-[320px] overflow-hidden rounded-card sm:min-h-[380px]">
           <Image src="/images/streams-bg.png" alt="" fill className="object-cover" sizes="(max-width: 1280px) 100vw, 1280px" />

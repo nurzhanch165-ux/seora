@@ -1,6 +1,7 @@
 import type { Product, Tone } from "@/data/products";
 import type { IconKey } from "@/data/categories";
 import type { ProductI18n } from "@/lib/productI18n";
+import { resolveProductWeightKg } from "@/lib/productWeight";
 
 // Строка таблицы products (snake_case) -> доменный тип Product (camelCase)
 export type ProductRow = {
@@ -23,6 +24,7 @@ export type ProductRow = {
   how_to_use: string;
   volume: string;
   weight: string;
+  weight_kg?: number | string | null;
   shelf_life: string;
   months_supply: string;
   country: string;
@@ -59,6 +61,7 @@ export function mapProductRow(row: ProductRow): Product {
     howToUse: row.how_to_use ?? "",
     volume: row.volume ?? "",
     weight: row.weight ?? "",
+    weightKg: row.weight_kg != null ? Number(row.weight_kg) : undefined,
     shelfLife: row.shelf_life ?? "",
     monthsSupply: row.months_supply ?? "",
     country: row.country ?? "",
@@ -96,6 +99,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     how_to_use: p.howToUse,
     volume: p.volume,
     weight: p.weight,
+    weight_kg: resolveProductWeightKg(p),
     shelf_life: p.shelfLife,
     months_supply: p.monthsSupply,
     country: p.country,

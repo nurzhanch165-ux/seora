@@ -1,4 +1,7 @@
 import { t, type Locale } from "./i18n";
+import type { CurrencyCode } from "./currency";
+import { EXCHANGE_RATES } from "./currency";
+import { billableShippingWeightKg, MIN_SHIPPING_WEIGHT_KG } from "./productWeight";
 
 export type DeliveryMethodId = "avia" | "cargo" | "ems" | "domestic";
 
@@ -44,9 +47,10 @@ const METHOD_DEFS: Record<CountryRegion, DeliveryMethodId[]> = {
   other: ["ems"],
 };
 
-const PRICE_NOTE: Partial<Record<DeliveryMethodId, string>> = {
-  avia: "9",
-  cargo: "4",
+const PRICE_USD_PER_KG: Partial<Record<DeliveryMethodId, number>> = {
+  avia: 9,
+  cargo: 4,
+  ems: 12,
 };
 
 /** Canonical Russian names used in orders / detectRegion fallback */
@@ -86,13 +90,13 @@ export function getCountries(locale: Locale): string[] {
 }
 
 function localizeMethod(id: DeliveryMethodId, locale: Locale): DeliveryMethod {
-  const price = PRICE_NOTE[id];
+  const price = PRICE_USD_PER_KG[id];
   return {
     id,
     label: deliveryMethodLabel(id, locale),
     labelExcel: METHOD_EXCEL[id],
     description: t(METHOD_DESC_I18N[id], locale),
-    priceNote: price ? t("delivery.pricePerKg", locale, { price }) : undefined,
+    priceNote: price ? t("delivery.pricePerKg", locale, { price: String(price) }) : undefined,
   };
 }
 
@@ -132,3 +136,37 @@ export function domesticDeliveryFeeKrw(): number {
 export function isDomesticDelivery(methodId: DeliveryMethodId): boolean {
   return methodId === "domestic";
 }
+
+export function isWeightBasedDelivery(methodId: DeliveryMethodId): boolean {
+  return methodId === "avia" || methodId === "cargo" || methodId === "ems";
+}
+
+/** 1 USD → KRW по курсу (rates.USD = KRW→USD) */
+export function krwPerUsd(rates: Record<CurrencyCode, number> = EXCHANGE_RATES): number {
+  const usd = rates.USD;
+  return usd > 0 ? 1 / usd : 1350;
+}
+
+/** Стоимость доставки в ₩ по весу корзины */
+export function calculateDeliveryFeeKrw(
+  methodId: DeliveryMethodId,
+  totalWeightKg: number,
+  rates: Record<CurrencyCode, number> = EXCHANGE_RATES
+): { feeKrw: number; billableKg: number; usdPerKg: number | null } {
+  if (isDomesticDelivery(methodId)) {
+    return { feeKrw: domesticDeliveryFeeKrw(), billableKg: totalWeightKg, usdPerKg: null };
+  }
+
+  const usdPerKg = PRICE_USD_PER_KG[methodId];
+  if (!usdPerKg) {
+    return { feeKrw: 0, billableKg: totalWeightKg, usdPerKg: null };
+  }
+
+  const billableKg = billableShippingWeightKg(totalWeightKg);
+  const feeUsd = billableKg * usdPerKg;
+  const feeKrw = Math.round(feeUsd * krwPerUsd(rates));
+
+  return { feeKrw, billableKg, usdPerKg };
+}
+
+export { MIN_SHIPPING_WEIGHT_KG };

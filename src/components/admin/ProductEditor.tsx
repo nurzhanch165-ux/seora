@@ -6,7 +6,8 @@ import { IconKey, sections as STATIC_SECTIONS } from "@/data/categories";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useT } from "@/hooks/useTranslation";
 import { useCatalogExtras } from "@/store/catalogTree";
-import { brandSlugFromName, mergeBrands, mergeSections } from "@/lib/catalogTree";
+import { mergeBrands, mergeSections, brandSlugFromName } from "@/lib/catalogTree";
+import { inferProductWeightKg, formatWeightKg } from "@/lib/productWeight";
 import * as I from "@/components/icons";
 
 const ICONS: IconKey[] = [
@@ -136,6 +137,16 @@ export function ProductEditor({
     [section, form.categorySlug]
   );
 
+  const inferredWeightKg = useMemo(
+    () => inferProductWeightKg({
+      weight: form.weight,
+      volume: form.volume,
+      sectionSlug: form.sectionSlug,
+      name: form.name,
+    }),
+    [form.weight, form.volume, form.sectionSlug, form.name]
+  );
+
   function set<K extends keyof EditorState>(k: K, v: EditorState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -208,6 +219,7 @@ export function ProductEditor({
       howToUse: form.howToUse.trim(),
       volume: form.volume.trim(),
       weight: form.weight.trim(),
+      weightKg: inferredWeightKg,
       shelfLife: form.shelfLife.trim(),
       monthsSupply: form.monthsSupply.trim(),
       country: form.country.trim(),
@@ -342,6 +354,9 @@ export function ProductEditor({
       <div className="grid gap-4 sm:grid-cols-4">
         <Field label={tr("admin.product.volume")} value={form.volume} onChange={(v) => set("volume", v)} />
         <Field label={tr("admin.product.weight")} value={form.weight} onChange={(v) => set("weight", v)} />
+        <p className="text-xs text-faint sm:col-span-2">
+          {tr("admin.product.weightAuto", { weight: formatWeightKg(inferredWeightKg, "ru") })}
+        </p>
         <Field label={tr("admin.product.shelfLife")} value={form.shelfLife} onChange={(v) => set("shelfLife", v)} />
         <Field label={tr("admin.product.monthsSupply")} value={form.monthsSupply} onChange={(v) => set("monthsSupply", v)} />
       </div>

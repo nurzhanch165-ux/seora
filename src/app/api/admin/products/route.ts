@@ -47,10 +47,11 @@ export async function POST(req: Request) {
   const row = productToRow({ ...productOnly, i18n });
   let { error } = await admin.from("products").upsert(row, { onConflict: "id" });
 
-  if (error?.message?.includes("'i18n' column")) {
-    const { i18n: _removed, ...rowWithoutI18n } = row;
-    void _removed;
-    ({ error } = await admin.from("products").upsert(rowWithoutI18n, { onConflict: "id" }));
+  if (error?.message?.includes("'i18n' column") || error?.message?.includes("'weight_kg' column")) {
+    const { i18n: _i18n, weight_kg: _wkg, ...rowReduced } = row;
+    void _i18n;
+    void _wkg;
+    ({ error } = await admin.from("products").upsert(rowReduced, { onConflict: "id" }));
   }
 
   if (error) {

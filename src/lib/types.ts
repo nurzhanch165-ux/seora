@@ -104,6 +104,7 @@ export type Delivery = {
   comment: string;
   feeKrw?: number;
   feeConverted?: number;
+  totalWeightKg?: number;
 };
 
 export type OrderItem = {

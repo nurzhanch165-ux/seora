@@ -23,6 +23,7 @@ export type Product = {
   howToUse: string;
   volume: string; // сколько капсул / мл / стиков
   weight: string; // граммовка
+  weightKg?: number; // вес в кг для расчёта доставки (авто)
   shelfLife: string; // срок годности
   monthsSupply: string; // на сколько рассчитан
   country: string;
