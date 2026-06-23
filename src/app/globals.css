@@ -11,15 +11,16 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
-    overflow-x: hidden;
-    scrollbar-gutter: stable;
+    overflow-x: clip;
   }
 
   body {
     background-color: theme("colors.pearl");
     color: theme("colors.ink");
     font-family: theme("fontFamily.sans");
-    overflow-x: hidden;
+    overflow-x: clip;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   ::selection {
@@ -79,7 +80,7 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ease-smooth active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ease-smooth active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-5 max-sm:py-2.5 max-sm:text-[13px];
   }
   .btn-primary {
     @apply btn bg-ink text-pearl hover:bg-accent shadow-soft;

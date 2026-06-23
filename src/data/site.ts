@@ -7,8 +7,8 @@ export const site = {
   currencyCode: "KRW",
   locale: "ru-RU",
   contacts: {
-    whatsapp: "+7 (700) 000-00-00",
-    whatsappLink: "https://wa.me/77000000000",
+    whatsapp: "+82 10-4409-8203",
+    whatsappLink: "https://wa.me/821044098203",
     telegram: "@sonyshopkorea",
     telegramLink: "https://t.me/sonyshopkorea",
     instagram: "@sonyshopkorea",
@@ -18,7 +18,7 @@ export const site = {
     youtube: "SonyShopKorea",
     youtubeLink: "https://youtube.com/@sonyshopkorea",
     email: "hello@sonyshopkorea.com",
-    koreaPhone: "+82 10-0000-0000",
+    koreaPhone: "+82 10-4409-8203",
     address: "Республика Корея, г. Сеул — склад отправки",
   },
   payment: {

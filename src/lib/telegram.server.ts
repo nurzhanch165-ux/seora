@@ -1,4 +1,5 @@
 import "server-only";
+import { sitePath } from "@/lib/siteUrl";
 
 type BotInfo = { username: string; id: number };
 
@@ -82,7 +83,7 @@ export async function setTelegramWebhook(webhookUrl: string): Promise<{ ok: bool
 }
 
 export function formatStreamTelegramMessage(title: string, body: string, tiktokUrl: string): string {
-  const site = "https://sonyshopkorea.vercel.app/streams";
+  const site = sitePath("/streams");
   return `<b>${escapeHtml(title)}</b>\n\n${escapeHtml(body)}\n\n🎬 <a href="${tiktokUrl}">TikTok стрим</a>\n🛍 <a href="${site}">Стримы на сайте</a>`;
 }
 

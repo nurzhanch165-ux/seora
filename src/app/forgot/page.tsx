@@ -37,7 +37,8 @@ export default function ForgotPasswordPage() {
     }
     const res = await resetPassword(login, phone, password);
     if (!res.ok) {
-      setError(res.error ?? tr("auth.forgot.changeFailed"));
+      const errKey = res.error ?? "auth.resetFailed";
+      setError(errKey.includes(".") ? tr(errKey) : errKey);
       return;
     }
     setDone(true);

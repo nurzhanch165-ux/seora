@@ -3,9 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Customer } from "@/lib/types";
-import { getSupabase } from "@/lib/supabase/client";
 
-// Аккаунт без пароля (пароль хранится только как хеш в БД и не покидает сервер).
 export type Account = Customer & {
   id: string;
   login: string;
@@ -18,128 +16,115 @@ export type RegisterInput = Omit<Account, "id" | "createdAt"> & { password: stri
 
 type Result = { ok: boolean; error?: string };
 
-type RpcResult = { ok: boolean; error?: string; customer?: Account };
-
 type AuthState = {
   current: Account | null;
+  ready: boolean;
+  hydrateSession: () => Promise<void>;
   register: (input: RegisterInput) => Promise<Result>;
   login: (login: string, password: string) => Promise<Result>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (data: Partial<Account>) => Promise<Result>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<Result>;
   resetPassword: (login: string, phone: string, newPassword: string) => Promise<Result>;
 };
 
-function rpcError(error: unknown): Result {
-  // Supabase возвращает PostgrestError (не экземпляр Error) — достаём его message/details.
-  if (error && typeof error === "object") {
-    const e = error as { message?: string; details?: string; hint?: string };
-    const message = e.message || e.details || e.hint;
-    if (message) return { ok: false, error: message };
-  }
-  if (error instanceof Error && error.message) return { ok: false, error: error.message };
-  return { ok: false, error: "Ошибка соединения. Попробуйте ещё раз." };
+async function parseJson(res: Response) {
+  return res.json().catch(() => ({}));
 }
 
 export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       current: null,
+      ready: false,
+
+      hydrateSession: async () => {
+        try {
+          const res = await fetch("/api/auth/me", { credentials: "same-origin" });
+          const json = await parseJson(res);
+          set({ current: json.customer ?? null, ready: true });
+        } catch {
+          set({ ready: true });
+        }
+      },
 
       register: async (input) => {
-        const supabase = getSupabase();
-        if (!supabase) return { ok: false, error: "Сервис временно недоступен." };
-        const { data, error } = await supabase.rpc("register_customer", {
-          p_login: input.login,
-          p_password: input.password,
-          p_last_name: input.lastName,
-          p_first_name: input.firstName,
-          p_middle_name: input.middleName,
-          p_country: input.country,
-          p_city: input.city,
-          p_phone: input.phone,
-          p_whatsapp: input.whatsapp,
-          p_telegram: input.telegram,
-          p_email: input.email ?? null,
-          p_agree_data: input.agreeData,
-          p_agree_marketing: input.agreeMarketing,
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify(input),
         });
-        if (error) return rpcError(error);
-        const res = data as RpcResult;
-        if (!res.ok) return { ok: false, error: res.error };
-        set({ current: res.customer ?? null });
+        const json = await parseJson(res);
+        if (!res.ok || !json.ok) return { ok: false, error: json.error ?? "auth.registerFailed" };
+        set({ current: json.customer ?? null });
         return { ok: true };
       },
 
       login: async (login, password) => {
-        const supabase = getSupabase();
-        if (!supabase) return { ok: false, error: "Сервис временно недоступен." };
-        const { data, error } = await supabase.rpc("authenticate_customer", {
-          p_login: login,
-          p_password: password,
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ login, password }),
         });
-        if (error) return rpcError(error);
-        const res = data as RpcResult;
-        if (!res.ok) return { ok: false, error: res.error };
-        set({ current: res.customer ?? null });
+        const json = await parseJson(res);
+        if (!res.ok || !json.ok) return { ok: false, error: json.error ?? "auth.invalidCredentials" };
+        set({ current: json.customer ?? null });
         return { ok: true };
       },
 
-      logout: () => set({ current: null }),
+      logout: async () => {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
+        set({ current: null });
+      },
 
       updateProfile: async (formData) => {
         const me = get().current;
-        if (!me) return { ok: false, error: "Вы не авторизованы." };
-        const supabase = getSupabase();
-        if (!supabase) return { ok: false, error: "Сервис временно недоступен." };
-        const { data, error } = await supabase.rpc("update_customer_profile", {
-          p_id: me.id,
-          p_login: formData.login ?? me.login,
-          p_last_name: formData.lastName ?? me.lastName,
-          p_first_name: formData.firstName ?? me.firstName,
-          p_middle_name: formData.middleName ?? me.middleName,
-          p_country: formData.country ?? me.country,
-          p_city: formData.city ?? me.city,
-          p_phone: formData.phone ?? me.phone,
-          p_whatsapp: formData.whatsapp ?? me.whatsapp,
-          p_telegram: formData.telegram ?? me.telegram,
-          p_email: formData.email ?? me.email ?? null,
+        if (!me) return { ok: false, error: "auth.notAuthorized" };
+        const res = await fetch("/api/auth/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify(formData),
         });
-        if (error) return rpcError(error);
-        const res = data as RpcResult;
-        if (!res.ok) return { ok: false, error: res.error };
-        set({ current: res.customer ?? me });
+        const json = await parseJson(res);
+        if (!res.ok || !json.ok) return { ok: false, error: json.error ?? "auth.profileUpdateFailed" };
+        set({ current: json.customer ?? me });
         return { ok: true };
       },
 
       changePassword: async (currentPassword, newPassword) => {
-        const me = get().current;
-        if (!me) return { ok: false, error: "Вы не авторизованы." };
-        const supabase = getSupabase();
-        if (!supabase) return { ok: false, error: "Сервис временно недоступен." };
-        const { data, error } = await supabase.rpc("change_password", {
-          p_id: me.id,
-          p_current: currentPassword,
-          p_new: newPassword,
+        if (!get().current) return { ok: false, error: "auth.notAuthorized" };
+        const res = await fetch("/api/auth/change-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ currentPassword, newPassword }),
         });
-        if (error) return rpcError(error);
-        const res = data as RpcResult;
-        return res.ok ? { ok: true } : { ok: false, error: res.error };
+        const json = await parseJson(res);
+        if (!res.ok || !json.ok) return { ok: false, error: json.error ?? "auth.passwordChangeFailed" };
+        return { ok: true };
       },
 
       resetPassword: async (login, phone, newPassword) => {
-        const supabase = getSupabase();
-        if (!supabase) return { ok: false, error: "Сервис временно недоступен." };
-        const { data, error } = await supabase.rpc("reset_password", {
-          p_login: login,
-          p_phone: phone,
-          p_new: newPassword,
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ login, phone, newPassword }),
         });
-        if (error) return rpcError(error);
-        const res = data as RpcResult;
-        return res.ok ? { ok: true } : { ok: false, error: res.error };
+        const json = await parseJson(res);
+        if (!res.ok || !json.ok) return { ok: false, error: json.error ?? "auth.resetFailed" };
+        return { ok: true };
       },
     }),
-    { name: "sonyshopkorea-auth" }
+    {
+      name: "sonyshopkorea-auth",
+      partialize: (s) => ({ current: s.current }),
+      onRehydrateStorage: () => (state) => {
+        state?.hydrateSession();
+      },
+    }
   )
 );

@@ -13,7 +13,7 @@ type OrdersState = {
   orders: Order[];
   loading: boolean;
   error: string | null;
-  loadMine: (customerId: string) => Promise<void>;
+  loadMine: () => Promise<void>;
   loadAll: () => Promise<void>;
   createOrder: (input: CreateOrderInput) => Promise<{ ok: boolean; error?: string; order?: Order }>;
   setStatus: (id: string, status: OrderStatus) => Promise<Result>;
@@ -28,9 +28,9 @@ export const useOrders = create<OrdersState>()((set, get) => ({
   loading: false,
   error: null,
 
-  loadMine: async (customerId) => {
+  loadMine: async () => {
     set({ loading: true, error: null });
-    const res = await fetch(`/api/orders?customerId=${encodeURIComponent(customerId)}`);
+    const res = await fetch("/api/orders", { credentials: "same-origin" });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       set({ loading: false, error: json.error ?? "Не удалось загрузить заказы." });
@@ -54,6 +54,7 @@ export const useOrders = create<OrdersState>()((set, get) => ({
     const res = await fetch(`/api/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify(input),
     });
     const json = await res.json().catch(() => ({}));
@@ -90,7 +91,7 @@ export const useOrders = create<OrdersState>()((set, get) => ({
   attachScreenshot: async (id, file) => {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`/api/orders/${id}/screenshot`, { method: "POST", body: fd });
+    const res = await fetch(`/api/orders/${id}/screenshot`, { method: "POST", body: fd, credentials: "same-origin" });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: json.error ?? "Не удалось загрузить скриншот." };
     get().upsertLocal(json.order as Order);

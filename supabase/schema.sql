@@ -338,16 +338,12 @@ $$;
 
 -- Доступ к RPC: только функции, не таблицы
 revoke all on function public.register_customer(text,text,text,text,text,text,text,text,text,text,text,boolean,boolean) from public;
-grant execute on function public.register_customer(text,text,text,text,text,text,text,text,text,text,text,boolean,boolean) to anon, authenticated;
+-- execute only via service role (server API)
 
 revoke all on function public.authenticate_customer(text,text) from public;
-grant execute on function public.authenticate_customer(text,text) to anon, authenticated;
 
 revoke all on function public.change_password(uuid,text,text) from public;
-grant execute on function public.change_password(uuid,text,text) to anon, authenticated;
 
 revoke all on function public.reset_password(text,text,text) from public;
-grant execute on function public.reset_password(text,text,text) to anon, authenticated;
 
 revoke all on function public.update_customer_profile(uuid,text,text,text,text,text,text,text,text,text,text) from public;
-grant execute on function public.update_customer_profile(uuid,text,text,text,text,text,text,text,text,text,text) to anon, authenticated;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/adminAuth.server";
 import { setTelegramWebhook, telegramConfigured, getBotInfo } from "@/lib/telegram.server";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 export async function POST(req: Request) {
   if (!isAdminRequest()) {
@@ -11,9 +12,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({})) as { baseUrl?: string };
-  const origin = body.baseUrl?.trim()
-    || process.env.NEXT_PUBLIC_SITE_URL?.trim()
-    || "https://sonyshopkorea.vercel.app";
+  const origin = body.baseUrl?.trim() || getSiteUrl();
   const webhookUrl = `${origin.replace(/\/$/, "")}/api/telegram/webhook`;
 
   const result = await setTelegramWebhook(webhookUrl);

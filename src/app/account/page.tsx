@@ -22,7 +22,7 @@ export default function AccountOrdersPage() {
   const locale = useLocale();
 
   useEffect(() => {
-    if (account?.id) loadMine(account.id);
+    if (account?.id) loadMine();
   }, [account?.id, loadMine]);
 
   const myOrders = orders;

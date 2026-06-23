@@ -1,30 +1,43 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminRequest } from "@/lib/adminAuth.server";
+import { getCustomerIdFromRequest } from "@/lib/customerSession.server";
 import { buildOrders, SCREENSHOT_BUCKET } from "@/lib/supabase/orders";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
+  const sessionId = getCustomerIdFromRequest();
+  const isAdmin = isAdminRequest();
+
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Файл не передан." }, { status: 400 });
+    return NextResponse.json({ error: "payment.uploadFailed" }, { status: 400 });
   }
   if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Загрузите изображение." }, { status: 400 });
+    return NextResponse.json({ error: "payment.imageRequired" }, { status: 400 });
   }
   if (file.size > 6 * 1024 * 1024) {
-    return NextResponse.json({ error: "Файл слишком большой (макс. 6 МБ)." }, { status: 400 });
+    return NextResponse.json({ error: "payment.fileTooLarge" }, { status: 400 });
   }
 
   const admin = createAdminClient();
 
-  // Проверяем, что заказ существует
   const { data: existing, error: findErr } = await admin
     .from("orders")
     .select("*")
     .eq("id", params.id)
     .single();
   if (findErr || !existing) {
-    return NextResponse.json({ error: "Заказ не найден." }, { status: 404 });
+    return NextResponse.json({ error: "checkout.createFailed" }, { status: 404 });
+  }
+
+  if (!isAdmin) {
+    if (!sessionId) {
+      return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+    }
+    if (existing.customer_id !== sessionId) {
+      return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+    }
   }
 
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
@@ -49,7 +62,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .select("*")
     .single();
   if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? "Не удалось сохранить." }, { status: 500 });
+    return NextResponse.json({ error: error?.message ?? "payment.uploadFailed" }, { status: 500 });
   }
 
   const [order] = await buildOrders(admin, [data]);

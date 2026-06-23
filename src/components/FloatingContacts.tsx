@@ -48,10 +48,10 @@ function ContactBtn({
 }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" className="group flex items-center gap-2">
-      <span className="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-pearl opacity-0 transition-opacity group-hover:opacity-100">
+      <span className="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-pearl sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
         {label}
       </span>
-      <span className={`flex h-11 w-11 items-center justify-center rounded-full text-white shadow-soft ${tone}`}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow-soft ${tone}`}>
         {children}
       </span>
     </a>

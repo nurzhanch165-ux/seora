@@ -71,7 +71,8 @@ function RegisterInner() {
     const res = await register({ ...form, email: form.email.trim() || undefined, agreeData, agreeMarketing });
     setSubmitting(false);
     if (!res.ok) {
-      setError(res.error ?? tr("auth.registerFailed"));
+      const errKey = res.error ?? "auth.registerFailed";
+      setError(errKey.includes(".") ? tr(errKey) : errKey);
       return;
     }
     router.push(next);

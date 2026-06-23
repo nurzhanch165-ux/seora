@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCustomerIdFromRequest } from "@/lib/customerSession.server";
 import { customerTelegramLink, getBotInfo, telegramConfigured } from "@/lib/telegram.server";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const customerId = searchParams.get("customerId");
+export async function GET() {
+  const customerId = getCustomerIdFromRequest();
   if (!customerId) {
-    return NextResponse.json({ error: "Не указан customerId." }, { status: 400 });
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
   }
+
   if (!telegramConfigured()) {
     return NextResponse.json({ configured: false, url: null, connected: false });
   }

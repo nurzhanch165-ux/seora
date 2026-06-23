@@ -112,8 +112,8 @@ export function Header() {
           </div>
         </div>
 
-        <div className="container-site flex h-14 min-w-0 items-center gap-2 sm:h-16 md:h-[68px] lg:gap-3">
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="container-site flex h-14 min-w-0 items-center gap-1.5 sm:h-16 sm:gap-2 md:h-[68px] lg:gap-3">
+          <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
             <button
               className="icon-btn -ml-1 shrink-0 lg:hidden"
               onClick={() => setMobileOpen(true)}
@@ -121,11 +121,11 @@ export function Header() {
             >
               <I.Menu />
             </button>
-            <Link href="/" className="group flex shrink-0 items-center gap-2.5 select-none">
+            <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2 select-none sm:gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold tracking-tight text-pearl sm:h-9 sm:w-9">
                 SK
               </span>
-              <span className="hidden whitespace-nowrap font-display text-sm font-semibold tracking-tight text-ink sm:block lg:text-[13px] xl:text-base">
+              <span className="hidden min-[400px]:block whitespace-nowrap font-display text-sm font-semibold tracking-tight text-ink sm:text-[13px] xl:text-base">
                 {site.name}
               </span>
             </Link>
@@ -161,7 +161,7 @@ export function Header() {
             <span className="hidden shrink-0 xl:contents">{navLink("/contacts", tr("nav.contacts"))}</span>
           </nav>
 
-          <div className="flex shrink-0 items-center gap-0">
+          <div className="ml-auto flex shrink-0 items-center gap-0">
             <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label={tr("common.search")}>
               <I.Search />
             </button>
@@ -180,6 +180,20 @@ export function Header() {
               <I.Bag />
               {hydrated && cartCount > 0 && <Badge>{cartCount > 99 ? "99+" : cartCount}</Badge>}
             </Link>
+          </div>
+        </div>
+
+        <div className="border-b border-line/60 bg-surface px-4 py-2 md:hidden">
+          <div className="container-site flex items-center justify-between gap-3">
+            <LocaleCurrencyBar compact />
+            <div className="flex shrink-0 items-center gap-3 text-[11px]">
+              <a href={site.contacts.whatsappLink} className="text-muted hover:text-accent" aria-label="WhatsApp">
+                <I.Whatsapp size={18} />
+              </a>
+              <a href={site.contacts.telegramLink} className="text-muted hover:text-accent" aria-label="Telegram">
+                <I.Telegram size={18} />
+              </a>
+            </div>
           </div>
         </div>
 
@@ -268,8 +282,8 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <div className="absolute inset-0 bg-ink/50 animate-fadeIn" onClick={onClose} />
-      <div className="absolute left-0 top-0 flex h-full w-[88%] max-w-sm flex-col bg-pearl shadow-lift">
-        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+      <div className="absolute left-0 top-0 flex h-full w-full max-w-sm flex-col bg-pearl shadow-lift sm:w-[88%]">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))]">
           <span className="font-display text-base font-semibold">{site.name}</span>
           <button className="icon-btn" onClick={onClose} aria-label={tr("common.close")}>
             <I.Close />

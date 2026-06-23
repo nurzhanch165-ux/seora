@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/adminAuth.server";
+import { getCustomerIdFromRequest } from "@/lib/customerSession.server";
 import { buildOrders } from "@/lib/supabase/orders";
 import type { CreateOrderInput } from "@/store/orders";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const customerId = searchParams.get("customerId");
+export async function GET() {
   const admin = createAdminClient();
+  const sessionId = getCustomerIdFromRequest();
+  const isAdmin = isAdminRequest();
 
   let query = admin.from("orders").select("*").order("created_at", { ascending: false });
 
-  if (customerId) {
-    query = query.eq("customer_id", customerId);
-  } else if (!isAdminRequest()) {
-    return NextResponse.json({ error: "Доступ запрещён." }, { status: 403 });
+  if (isAdmin) {
+    // all orders
+  } else if (sessionId) {
+    query = query.eq("customer_id", sessionId);
+  } else {
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
   }
 
   const { data, error } = await query;
@@ -27,15 +30,27 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const input = (await req.json().catch(() => null)) as CreateOrderInput | null;
   if (!input || !Array.isArray(input.items) || input.items.length === 0) {
-    return NextResponse.json({ error: "Некорректные данные заказа." }, { status: 400 });
+    return NextResponse.json({ error: "checkout.createFailed" }, { status: 400 });
   }
+
+  const sessionId = getCustomerIdFromRequest();
+  const isAdmin = isAdminRequest();
+  if (!sessionId && !isAdmin) {
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+  }
+
+  const customerId = sessionId ?? input.customerId ?? null;
+  if (sessionId && input.customerId && input.customerId !== sessionId) {
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+  }
+
   const admin = createAdminClient();
 
   const { data: orderRow, error: orderErr } = await admin
     .from("orders")
     .insert({
       number: input.number,
-      customer_id: input.customerId ?? null,
+      customer_id: customerId,
       customer: input.customer,
       delivery: input.delivery,
       total: input.totalConverted ?? input.total,
@@ -56,7 +71,7 @@ export async function POST(req: Request) {
     .single();
 
   if (orderErr || !orderRow) {
-    return NextResponse.json({ error: orderErr?.message ?? "Не удалось создать заказ." }, { status: 500 });
+    return NextResponse.json({ error: orderErr?.message ?? "checkout.createFailed" }, { status: 500 });
   }
 
   const items = input.items.map((it) => ({

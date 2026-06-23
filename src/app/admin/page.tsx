@@ -54,16 +54,16 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="container-site py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="h-display text-3xl md:text-4xl">{tr("admin.title")}</h1>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1 rounded-full border border-line bg-surface p-1">
+    <div className="container-site py-6 sm:py-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <h1 className="h-display text-2xl sm:text-3xl md:text-4xl">{tr("admin.title")}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1">
             {tabs.map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`rounded-full px-4 py-2 text-sm transition-colors ${tab === t ? "bg-ink text-pearl" : "text-muted hover:text-ink"}`}
+                className={`shrink-0 rounded-full px-3 py-2 text-xs transition-colors sm:px-4 sm:text-sm ${tab === t ? "bg-ink text-pearl" : "text-muted hover:text-ink"}`}
               >
                 {label}
               </button>
@@ -71,7 +71,7 @@ export default function AdminPage() {
           </div>
           <button
             onClick={() => { logout(); router.replace("/login"); }}
-            className="btn-outline px-4 py-2 text-sm"
+            className="btn-outline shrink-0 px-4 py-2 text-sm"
           >
             {tr("admin.logout")}
           </button>
@@ -572,10 +572,12 @@ function ProductsPanelNav({
   panel,
   setPanel,
   tr,
+  onCatalog,
 }: {
   panel: "products" | "catalog";
   setPanel: (p: "products" | "catalog") => void;
   tr: (key: string) => string;
+  onCatalog?: () => void;
 }) {
   return (
     <div className="mb-5 flex flex-wrap gap-2">
@@ -588,7 +590,7 @@ function ProductsPanelNav({
       </button>
       <button
         type="button"
-        onClick={() => setPanel("catalog")}
+        onClick={() => { onCatalog?.(); setPanel("catalog"); }}
         className={`chip ${panel === "catalog" ? "border-accent bg-accent-soft text-accent" : ""}`}
       >
         {tr("admin.products.tabCatalog")}
@@ -626,8 +628,11 @@ function ProductsAdmin() {
   if (mode === "new") {
     return (
       <div>
-        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} />
-        <div className="card p-6 md:p-8">
+        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} onCatalog={() => setMode("list")} />
+        {panel === "catalog" ? (
+          <CategoryEditor />
+        ) : (
+        <div className="card p-4 sm:p-6 md:p-8">
           <h2 className="mb-6 text-lg font-medium">{tr("admin.products.newTitle")}</h2>
           <ProductEditor
             onSave={async (p) => {
@@ -638,6 +643,7 @@ function ProductsAdmin() {
             onCancel={() => setMode("list")}
           />
         </div>
+        )}
       </div>
     );
   }
@@ -645,8 +651,11 @@ function ProductsAdmin() {
   if (editing) {
     return (
       <div>
-        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} />
-        <div className="card p-6 md:p-8">
+        <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} onCatalog={() => setMode("list")} />
+        {panel === "catalog" ? (
+          <CategoryEditor />
+        ) : (
+        <div className="card p-4 sm:p-6 md:p-8">
           <h2 className="mb-6 text-lg font-medium">{tr("admin.products.editTitle", { name: editing.name })}</h2>
           <ProductEditor
             product={editing}
@@ -658,6 +667,7 @@ function ProductsAdmin() {
             onCancel={() => setMode("list")}
           />
         </div>
+        )}
       </div>
     );
   }

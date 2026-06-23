@@ -11,6 +11,7 @@ import { ProductDetail } from "@/components/ProductDetail";
 import { ProductGrid } from "@/components/ProductGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 import { useT, useLocale } from "@/hooks/useTranslation";
+import { localizedProduct } from "@/lib/productI18n";
 import { sectionLabel, categoryLabel } from "@/lib/catalogI18n";
 
 type Props = { params: { slug: string } };
@@ -50,7 +51,7 @@ export default function ProductPage({ params }: Props) {
   const crumbs: Crumb[] = [];
   if (section) crumbs.push({ label: sectionLabel(section.slug, locale), href: `/c/${section.slug}` });
   if (category) crumbs.push({ label: categoryLabel(product.sectionSlug, product.categorySlug, locale), href: `/c/${product.sectionSlug}/${product.categorySlug}` });
-  crumbs.push({ label: product.name });
+  crumbs.push({ label: localizedProduct(product, locale).name });
 
   return (
     <div className="container-site py-8">

@@ -12,7 +12,11 @@ type TelegramUpdate = {
 
 export async function POST(req: Request) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
-  if (secret) {
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ ok: false }, { status: 503 });
+    }
+  } else {
     const header = req.headers.get("x-telegram-bot-api-secret-token");
     if (header !== secret) {
       return NextResponse.json({ ok: false }, { status: 403 });

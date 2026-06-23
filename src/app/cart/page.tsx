@@ -5,7 +5,8 @@ import { useCart } from "@/store/cart";
 import { useCatalogProducts } from "@/store/catalog";
 import { brandName } from "@/data/brands";
 import { formatPrice } from "@/lib/format";
-import { useT } from "@/hooks/useTranslation";
+import { useT, useLocale } from "@/hooks/useTranslation";
+import { localizedProduct } from "@/lib/productI18n";
 import { useHydrated } from "@/lib/useHydrated";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -13,6 +14,7 @@ import * as I from "@/components/icons";
 
 export default function CartPage() {
   const tr = useT();
+  const locale = useLocale();
   const hydrated = useHydrated();
   const lines = useCart((s) => s.lines);
   const setQty = useCart((s) => s.setQty);
@@ -20,8 +22,12 @@ export default function CartPage() {
   const catalog = useCatalogProducts();
 
   const items = lines
-    .map((l) => ({ line: l, product: catalog.find((p) => p.id === l.productId) }))
-    .filter((x) => x.product);
+    .map((l) => {
+      const raw = catalog.find((p) => p.id === l.productId);
+      if (!raw) return null;
+      return { line: l, product: localizedProduct(raw, locale) };
+    })
+    .filter((x): x is { line: typeof lines[number]; product: NonNullable<ReturnType<typeof localizedProduct>> } => x !== null);
 
   const total = items.reduce((sum, x) => sum + (x.product!.price * x.line.qty), 0);
   const totalOld = items.reduce(
@@ -56,11 +62,11 @@ export default function CartPage() {
           <div className="space-y-3">
             {items.map(({ line, product }) => (
               <div key={line.productId} className="flex min-w-0 gap-3 rounded-xl2 border border-line bg-surface p-3 sm:gap-4 sm:p-4">
-                <Link href={`/product/${product!.slug}`} className="shrink-0">
+                <Link href={`/product/${product.slug}`} className="shrink-0">
                   <ProductVisual
-                    tone={product!.tone}
-                    glyph={product!.glyph}
-                    image={product!.images?.[0]}
+                    tone={product.tone}
+                    glyph={product.glyph}
+                    image={product.images?.[0]}
                     className="h-20 w-20 rounded-xl sm:h-28 sm:w-28"
                     glyphSize={34}
                   />
@@ -68,9 +74,9 @@ export default function CartPage() {
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-start justify-between gap-2 sm:gap-3">
                     <div className="min-w-0">
-                      <span className="text-[11px] uppercase tracking-wider text-faint">{brandName(product!.brandSlug)}</span>
-                      <Link href={`/product/${product!.slug}`} className="block line-clamp-2 text-sm leading-snug text-ink hover:text-accent">
-                        {product!.name}
+                      <span className="text-[11px] uppercase tracking-wider text-faint">{brandName(product.brandSlug)}</span>
+                      <Link href={`/product/${product.slug}`} className="block line-clamp-2 text-sm leading-snug text-ink hover:text-accent">
+                        {product.name}
                       </Link>
                     </div>
                     <button onClick={() => remove(line.productId)} className="text-faint transition-colors hover:text-sale" aria-label={tr("common.remove")}>
@@ -88,8 +94,8 @@ export default function CartPage() {
                       </button>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-ink">{formatPrice(product!.price * line.qty)}</p>
-                      <p className="text-xs text-muted">{tr("cart.perUnit", { price: formatPrice(product!.price) })}</p>
+                      <p className="text-sm font-semibold text-ink">{formatPrice(product.price * line.qty)}</p>
+                      <p className="text-xs text-muted">{tr("cart.perUnit", { price: formatPrice(product.price) })}</p>
                     </div>
                   </div>
                 </div>

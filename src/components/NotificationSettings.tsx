@@ -36,13 +36,13 @@ export function NotificationSettings() {
 
   useEffect(() => {
     if (!account?.id) return;
-    fetch(`/api/notifications?customerId=${encodeURIComponent(account.id)}`)
+    fetch("/api/notifications", { credentials: "same-origin" })
       .then((r) => r.json())
       .then((j) => setItems(j.notifications ?? []));
     fetch("/api/notifications/config")
       .then((r) => r.json())
       .then((j) => { if (j.tiktokUrl) setTiktokUrl(j.tiktokUrl); });
-    fetch(`/api/telegram/link?customerId=${encodeURIComponent(account.id)}`)
+    fetch("/api/telegram/link", { credentials: "same-origin" })
       .then((r) => r.json())
       .then((j) => {
         if (j.url) setTelegramUrl(j.url);
@@ -70,8 +70,8 @@ export function NotificationSettings() {
     await fetch("/api/notifications/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({
-        customerId: account.id,
         subscription: { endpoint: json.endpoint!, keys: json.keys as { p256dh: string; auth: string } },
       }),
     });
@@ -84,7 +84,8 @@ export function NotificationSettings() {
     await fetch("/api/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, customerId: account.id }),
+      credentials: "same-origin",
+      body: JSON.stringify({ id }),
     });
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
   }

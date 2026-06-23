@@ -11,7 +11,17 @@ function adminLogin(): string {
   return process.env.ADMIN_LOGIN ?? "admin";
 }
 function adminPassword(): string {
-  return process.env.ADMIN_PASSWORD ?? "admin123";
+  const p = process.env.ADMIN_PASSWORD?.trim();
+  if (!p) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ADMIN_PASSWORD must be set in production.");
+    }
+    return "admin123";
+  }
+  if (process.env.NODE_ENV === "production" && p.length < 12) {
+    console.warn("[security] ADMIN_PASSWORD should be at least 12 characters in production.");
+  }
+  return p;
 }
 
 export function adminToken(): string {

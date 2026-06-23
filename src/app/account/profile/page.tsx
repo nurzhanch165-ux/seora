@@ -51,7 +51,8 @@ export default function ProfilePage() {
       email: form.email.trim() || undefined,
     });
     if (!res.ok) {
-      setError(res.error ?? tr("account.profile.saveFailed"));
+      const errKey = res.error ?? "auth.profileUpdateFailed";
+      setError(errKey.includes(".") ? tr(errKey) : errKey);
       return;
     }
     setSaved(true);
@@ -68,7 +69,8 @@ export default function ProfilePage() {
     }
     const res = await changePassword(pwd.current, pwd.next);
     if (!res.ok) {
-      setPwdError(res.error ?? tr("auth.forgot.changeFailed"));
+      const errKey = res.error ?? "auth.passwordChangeFailed";
+      setPwdError(errKey.includes(".") ? tr(errKey) : errKey);
       return;
     }
     setPwd({ current: "", next: "", confirm: "" });

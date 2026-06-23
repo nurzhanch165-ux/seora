@@ -29,6 +29,11 @@ function slugify(s: string): string {
     .replace(/^-|-$/g, "");
 }
 
+function categoryExistsInTree(sections: Section[], sectionSlug: string, slug: string): boolean {
+  const section = sections.find((s) => s.slug === sectionSlug);
+  return section?.categories.some((c) => c.slug === slug) ?? false;
+}
+
 export function CategoryEditor() {
   const tr = useT();
   const extras = useCatalogTree((s) => s.extras);
@@ -53,6 +58,16 @@ export function CategoryEditor() {
     const sec = sections.find((s) => s.slug === subSection);
     return sec?.categories ?? [];
   }, [sections, subSection]);
+
+  const extraCategoryKeys = useMemo(
+    () => new Set(extras.extraCategories.map((c) => `${c.sectionSlug}:${c.slug}`)),
+    [extras.extraCategories]
+  );
+
+  const extraSubKeys = useMemo(
+    () => new Set(extras.extraSubcategories.map((s) => `${s.sectionSlug}:${s.categorySlug}:${s.slug}`)),
+    [extras.extraSubcategories]
+  );
 
   async function persist(next: CatalogExtras) {
     setSaving(true);
@@ -89,7 +104,7 @@ export function CategoryEditor() {
     e.preventDefault();
     if (!catName.trim()) return;
     const slug = slugify(catName) || "category";
-    if (extras.extraCategories.some((c) => c.sectionSlug === catSection && c.slug === slug)) {
+    if (categoryExistsInTree(sections, catSection, slug)) {
       setError(tr("admin.catalog.categoryExists"));
       return;
     }
@@ -110,11 +125,9 @@ export function CategoryEditor() {
     e.preventDefault();
     if (!subName.trim() || !subCategory) return;
     const slug = slugify(subName) || "sub";
-    if (
-      extras.extraSubcategories.some(
-        (s) => s.sectionSlug === subSection && s.categorySlug === subCategory && s.slug === slug
-      )
-    ) {
+    const section = sections.find((s) => s.slug === subSection);
+    const category = section?.categories.find((c) => c.slug === subCategory);
+    if (category?.subs.some((s) => s.slug === slug)) {
       setError(tr("admin.catalog.subExists"));
       return;
     }
@@ -156,7 +169,81 @@ export function CategoryEditor() {
       {msg && <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">{msg}</p>}
       {error && <p className="rounded-lg bg-sale/10 px-3 py-2 text-sm text-sale">{error}</p>}
 
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
+        <h3 className="text-lg font-medium">{tr("admin.catalog.treeTitle")}</h3>
+        <p className="mt-1 text-sm text-muted">{tr("admin.catalog.treeHint")}</p>
+        <div className="mt-4 space-y-4">
+          {sections.map((section) => (
+            <div key={section.slug} className="rounded-xl border border-line">
+              <div className="border-b border-line bg-mist px-4 py-2.5">
+                <p className="font-medium text-ink">{section.name}</p>
+                <p className="text-xs text-muted">{section.slug}</p>
+              </div>
+              <ul className="divide-y divide-line">
+                {section.categories.map((cat) => {
+                  const isExtraCat = extraCategoryKeys.has(`${section.slug}:${cat.slug}`);
+                  return (
+                    <li key={cat.slug} className="px-4 py-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-ink">
+                            {cat.name}
+                            {isExtraCat && (
+                              <span className="ml-2 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                                {tr("admin.catalog.customBadge")}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted">{cat.slug} · {cat.subs.length} {tr("admin.catalog.subCount")}</p>
+                        </div>
+                        {isExtraCat && (
+                          <button
+                            type="button"
+                            onClick={() => removeCategory(section.slug, cat.slug)}
+                            className="text-faint hover:text-sale"
+                            aria-label={tr("common.remove")}
+                          >
+                            <I.Trash size={16} />
+                          </button>
+                        )}
+                      </div>
+                      {cat.subs.length > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-1.5">
+                          {cat.subs.map((sub) => {
+                            const isExtraSub = extraSubKeys.has(`${section.slug}:${cat.slug}:${sub.slug}`);
+                            return (
+                              <li
+                                key={sub.slug}
+                                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs ${
+                                  isExtraSub ? "border-accent/30 bg-accent-soft text-accent" : "border-line text-muted"
+                                }`}
+                              >
+                                {sub.name}
+                                {isExtraSub && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSub(section.slug, cat.slug, sub.slug)}
+                                    className="text-accent/70 hover:text-sale"
+                                    aria-label={tr("common.remove")}
+                                  >
+                                    <I.Close size={12} />
+                                  </button>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card p-4 sm:p-6">
         <h3 className="text-lg font-medium">{tr("admin.catalog.brandsTitle")}</h3>
         <p className="mt-1 text-sm text-muted">{tr("admin.catalog.brandsHint")}</p>
         <form onSubmit={addBrand} className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -169,24 +256,25 @@ export function CategoryEditor() {
             <input className="field" value={brandCountry} onChange={(e) => setBrandCountry(e.target.value)} />
           </div>
           <div className="flex items-end">
-            <button type="submit" disabled={saving} className="btn-primary">{tr("admin.catalog.addBrand")}</button>
+            <button type="submit" disabled={saving} className="btn-primary w-full sm:w-auto">{tr("admin.catalog.addBrand")}</button>
           </div>
         </form>
         {extras.extraBrands.length > 0 && (
           <ul className="mt-4 space-y-2">
             {extras.extraBrands.map((b) => (
-              <li key={b.slug} className="flex items-center justify-between rounded-lg border border-line px-3 py-2 text-sm">
-                <span>{b.name} <span className="text-muted">({b.slug})</span></span>
-                <button type="button" onClick={() => removeBrand(b.slug)} className="text-faint hover:text-sale"><I.Trash size={16} /></button>
+              <li key={b.slug} className="flex items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+                <span className="min-w-0 truncate">{b.name} <span className="text-muted">({b.slug})</span></span>
+                <button type="button" onClick={() => removeBrand(b.slug)} className="shrink-0 text-faint hover:text-sale"><I.Trash size={16} /></button>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
         <h3 className="text-lg font-medium">{tr("admin.catalog.categoriesTitle")}</h3>
-        <form onSubmit={addCategory} className="mt-4 grid gap-4 sm:grid-cols-4">
+        <p className="mt-1 text-sm text-muted">{tr("admin.catalog.categoriesHint")}</p>
+        <form onSubmit={addCategory} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="field-label">{tr("admin.product.section")}</label>
             <select className="field" value={catSection} onChange={(e) => setCatSection(e.target.value as Section["slug"])}>
@@ -195,7 +283,7 @@ export function CategoryEditor() {
           </div>
           <div>
             <label className="field-label">{tr("admin.product.category")}</label>
-            <input className="field" value={catName} onChange={(e) => setCatName(e.target.value)} />
+            <input className="field" value={catName} onChange={(e) => setCatName(e.target.value)} placeholder={tr("admin.catalog.categoryPlaceholder")} />
           </div>
           <div>
             <label className="field-label">{tr("admin.product.icon")}</label>
@@ -204,24 +292,15 @@ export function CategoryEditor() {
             </select>
           </div>
           <div className="flex items-end">
-            <button type="submit" disabled={saving} className="btn-primary">{tr("admin.catalog.addCategory")}</button>
+            <button type="submit" disabled={saving} className="btn-primary w-full sm:w-auto">{tr("admin.catalog.addCategory")}</button>
           </div>
         </form>
-        {extras.extraCategories.length > 0 && (
-          <ul className="mt-4 space-y-2">
-            {extras.extraCategories.map((c) => (
-              <li key={`${c.sectionSlug}-${c.slug}`} className="flex items-center justify-between rounded-lg border border-line px-3 py-2 text-sm">
-                <span>{c.name} · {c.sectionSlug}</span>
-                <button type="button" onClick={() => removeCategory(c.sectionSlug, c.slug)} className="text-faint hover:text-sale"><I.Trash size={16} /></button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
         <h3 className="text-lg font-medium">{tr("admin.catalog.subsTitle")}</h3>
-        <form onSubmit={addSubcategory} className="mt-4 grid gap-4 sm:grid-cols-4">
+        <p className="mt-1 text-sm text-muted">{tr("admin.catalog.subsHint")}</p>
+        <form onSubmit={addSubcategory} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="field-label">{tr("admin.product.section")}</label>
             <select className="field" value={subSection} onChange={(e) => { setSubSection(e.target.value as Section["slug"]); setSubCategory(""); }}>
@@ -237,22 +316,12 @@ export function CategoryEditor() {
           </div>
           <div>
             <label className="field-label">{tr("admin.product.subcategory")}</label>
-            <input className="field" value={subName} onChange={(e) => setSubName(e.target.value)} />
+            <input className="field" value={subName} onChange={(e) => setSubName(e.target.value)} placeholder={tr("admin.catalog.subPlaceholder")} />
           </div>
           <div className="flex items-end">
-            <button type="submit" disabled={saving} className="btn-primary">{tr("admin.catalog.addSub")}</button>
+            <button type="submit" disabled={saving || !subCategory} className="btn-primary w-full sm:w-auto disabled:opacity-50">{tr("admin.catalog.addSub")}</button>
           </div>
         </form>
-        {extras.extraSubcategories.length > 0 && (
-          <ul className="mt-4 space-y-2">
-            {extras.extraSubcategories.map((s) => (
-              <li key={`${s.sectionSlug}-${s.categorySlug}-${s.slug}`} className="flex items-center justify-between rounded-lg border border-line px-3 py-2 text-sm">
-                <span>{s.name} · {s.categorySlug}</span>
-                <button type="button" onClick={() => removeSub(s.sectionSlug, s.categorySlug, s.slug)} className="text-faint hover:text-sale"><I.Trash size={16} /></button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   );

@@ -60,15 +60,15 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
       <Breadcrumbs items={[{ label: tr("account.title") }]} />
       <h1 className="mt-6 h-display text-3xl md:text-4xl">{title}</h1>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
-        <aside>
-          <div className="card mb-4 p-5">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
+        <aside className="lg:sticky lg:top-28 lg:self-start">
+          <div className="card mb-4 p-4 sm:p-5">
             <p className="text-sm font-medium text-ink">
               {account ? `${account.firstName} ${account.lastName}` : tr("account.admin")}
             </p>
             <p className="mt-0.5 text-xs text-muted">{account ? account.phone : tr("account.serviceLogin")}</p>
           </div>
-          <nav className="card overflow-hidden">
+          <nav className="no-scrollbar flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible lg:rounded-card lg:border lg:border-line lg:bg-surface">
             {nav.map((item) => {
               const active = pathname === item.href;
               const Icon = item.icon;
@@ -76,8 +76,10 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 border-b border-line px-5 py-3.5 text-sm transition-colors last:border-0 ${
-                    active ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-ink/5 hover:text-ink"
+                  className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm transition-colors lg:gap-3 lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-5 lg:py-3.5 lg:last:border-0 ${
+                    active
+                      ? "border-accent bg-accent-soft font-medium text-accent lg:bg-accent-soft"
+                      : "border-line bg-surface text-muted hover:border-accent/30 hover:text-ink lg:border-0 lg:bg-transparent lg:hover:bg-ink/5"
                   }`}
                 >
                   <Icon size={18} />
@@ -88,15 +90,22 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
             {adminLoggedIn && (
               <Link
                 href="/admin"
-                className="flex items-center gap-3 border-b border-line px-5 py-3.5 text-sm text-accent transition-colors hover:bg-accent-soft"
+                className="flex shrink-0 items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-4 py-2.5 text-sm text-accent transition-colors lg:gap-3 lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-5 lg:py-3.5"
               >
                 <I.Shield size={18} />
                 {tr("account.goToAdmin")}
               </Link>
             )}
             <button
-              onClick={() => { logout(); router.push("/"); }}
-              className="flex w-full items-center gap-3 px-5 py-3.5 text-sm text-muted transition-colors hover:bg-ink/5 hover:text-sale"
+              onClick={() => { void logout().then(() => router.push("/")); }}
+              className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-sm text-muted transition-colors hover:text-sale lg:hidden"
+            >
+              <I.ArrowUpRight size={18} />
+              {tr("account.logout")}
+            </button>
+            <button
+              onClick={() => { void logout().then(() => router.push("/")); }}
+              className="hidden w-full items-center gap-3 px-5 py-3.5 text-sm text-muted transition-colors hover:bg-ink/5 hover:text-sale lg:flex"
             >
               <I.ArrowUpRight size={18} />
               {tr("account.logout")}
@@ -104,7 +113,7 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
           </nav>
         </aside>
 
-        <div>{children}</div>
+        <div className="min-w-0">{children}</div>
       </div>
     </div>
   );

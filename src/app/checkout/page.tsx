@@ -18,6 +18,7 @@ import { convertFromKrw, formatCurrency } from "@/lib/currency";
 import { useT, useSiteText, useLocale } from "@/hooks/useTranslation";
 import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, calculateDeliveryFeeKrw, isWeightBasedDelivery, type DeliveryMethodId } from "@/lib/delivery";
 import { cartTotalWeightKg, formatWeightKg } from "@/lib/productWeight";
+import { localizedProduct } from "@/lib/productI18n";
 import { Customer, Delivery } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductVisual } from "@/components/ProductVisual";
@@ -64,12 +65,19 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const items = useMemo(
-    () => lines.map((l) => ({ line: l, product: catalog.find((p) => p.id === l.productId) })).filter((x) => x.product),
-    [lines, catalog]
+    () =>
+      lines
+        .map((l) => {
+          const raw = catalog.find((p) => p.id === l.productId);
+          if (!raw) return null;
+          return { line: l, product: localizedProduct(raw, locale) };
+        })
+        .filter((x): x is { line: typeof lines[number]; product: ReturnType<typeof localizedProduct> } => x !== null),
+    [lines, catalog, locale]
   );
-  const productsTotalKrw = items.reduce((s, x) => s + x.product!.price * x.line.qty, 0);
+  const productsTotalKrw = items.reduce((s, x) => s + x.product.price * x.line.qty, 0);
   const cartWeightKg = useMemo(
-    () => cartTotalWeightKg(items.map((x) => ({ product: x.product!, qty: x.line.qty }))),
+    () => cartTotalWeightKg(items.map((x) => ({ product: x.product, qty: x.line.qty }))),
     [items]
   );
   const deliveryCalc = useMemo(
@@ -196,17 +204,17 @@ export default function CheckoutPage() {
         totalWeightKg: cartWeightKg,
       },
       items: items.map((x) => {
-        const krw = x.product!.price;
+        const krw = x.product.price;
         const conv = convertFromKrw(krw, currency, rates);
         return {
-          productId: x.product!.id,
-          slug: x.product!.slug,
-          name: x.product!.name,
-          brand: brandName(x.product!.brandSlug),
+          productId: x.product.id,
+          slug: x.product.slug,
+          name: x.product.name,
+          brand: brandName(x.product.brandSlug),
           price: krw,
           priceKrw: krw,
           priceConverted: conv.total,
-          sku: x.product!.id,
+          sku: x.product.id,
           qty: x.line.qty,
         };
       }),
@@ -242,15 +250,15 @@ export default function CheckoutPage() {
         </p>
       )}
 
-      <form onSubmit={submit} className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <form onSubmit={submit} className="mt-8 grid gap-8 pb-24 lg:grid-cols-[1fr_380px] lg:pb-0">
         <div className="space-y-8">
           <Section title={tr("checkout.contactTitle")} hint={tr("checkout.contactHint")}>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <Field label={`${tr("checkout.field.lastName")} ${tr("checkout.required")}`} value={customer.lastName} onChange={(v) => setCustomer({ ...customer, lastName: v })} />
               <Field label={`${tr("checkout.field.firstName")} ${tr("checkout.required")}`} value={customer.firstName} onChange={(v) => setCustomer({ ...customer, firstName: v })} />
               <Field label={`${tr("checkout.field.middleName")} ${tr("checkout.required")}`} value={customer.middleName} onChange={(v) => setCustomer({ ...customer, middleName: v })} />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <Field label={`${tr("checkout.field.country")} ${tr("checkout.required")}`} value={customer.country} onChange={(v) => setCustomer({ ...customer, country: v })} list="countries-list" />
               <Field label={`${tr("checkout.field.city")} ${tr("checkout.required")}`} value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
             </div>
@@ -259,7 +267,7 @@ export default function CheckoutPage() {
                 <option key={c} value={c} />
               ))}
             </datalist>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
               <Field label={`${tr("checkout.field.phone")} ${tr("checkout.required")}`} value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
               <Field label={`${tr("checkout.field.whatsapp")} ${tr("checkout.required")}`} value={customer.whatsapp} onChange={(v) => setCustomer({ ...customer, whatsapp: v })} />
               <Field label={`${tr("checkout.field.telegram")} ${tr("checkout.required")}`} value={customer.telegram} onChange={(v) => setCustomer({ ...customer, telegram: v })} />
@@ -268,11 +276,11 @@ export default function CheckoutPage() {
           </Section>
 
           <Section title={tr("checkout.deliveryTitle")} hint={tr("checkout.deliveryHint")}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <Field label={`${tr("checkout.field.recipient")} ${tr("checkout.required")}`} value={delivery.recipient} onChange={(v) => setDelivery({ ...delivery, recipient: v })} />
               <Field label={`${tr("checkout.field.recipientPhone")} ${tr("checkout.required")}`} value={delivery.recipientPhone} onChange={(v) => setDelivery({ ...delivery, recipientPhone: v })} />
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
               <Field label={`${tr("checkout.field.country")} ${tr("checkout.required")}`} value={delivery.country} onChange={(v) => setDelivery({ ...delivery, country: v })} />
               <Field label={`${tr("checkout.field.city")} ${tr("checkout.required")}`} value={delivery.city} onChange={(v) => setDelivery({ ...delivery, city: v })} />
               <Field label={tr("checkout.field.zip")} value={delivery.zip} onChange={(v) => setDelivery({ ...delivery, zip: v })} />
@@ -318,22 +326,22 @@ export default function CheckoutPage() {
         {/* Summary */}
         <aside className="lg:sticky lg:top-28 lg:self-start">
           <div className="card overflow-hidden">
-            <div className="border-b border-line p-5">
+            <div className="border-b border-line p-4 sm:p-5">
               <h2 className="text-lg font-medium">{tr("checkout.yourOrder")}</h2>
             </div>
-            <div className="max-h-72 space-y-3 overflow-y-auto p-5">
+            <div className="max-h-48 space-y-3 overflow-y-auto p-4 sm:max-h-72 sm:p-5">
               {items.map(({ line, product }) => (
                 <div key={line.productId} className="flex gap-3">
-                  <ProductVisual tone={product!.tone} glyph={product!.glyph} image={product!.images?.[0]} className="h-14 w-14 shrink-0 rounded-lg" glyphSize={22} />
-                  <div className="flex-1 text-sm">
-                    <p className="line-clamp-2 leading-snug text-ink">{product!.name}</p>
-                    <p className="mt-0.5 text-xs text-muted">{line.qty} × {formatCurrency(convertFromKrw(product!.price, currency).total, currency)}</p>
+                  <ProductVisual tone={product.tone} glyph={product.glyph} image={product.images?.[0]} className="h-14 w-14 shrink-0 rounded-lg" glyphSize={22} />
+                  <div className="min-w-0 flex-1 text-sm">
+                    <p className="line-clamp-2 leading-snug text-ink">{product.name}</p>
+                    <p className="mt-0.5 text-xs text-muted">{line.qty} × {formatCurrency(convertFromKrw(product.price, currency).total, currency)}</p>
                   </div>
-                  <span className="text-sm font-medium">{formatCurrency(convertFromKrw(product!.price * line.qty, currency).total, currency)}</span>
+                  <span className="shrink-0 text-sm font-medium">{formatCurrency(convertFromKrw(product.price * line.qty, currency).total, currency)}</span>
                 </div>
               ))}
             </div>
-            <div className="border-t border-line p-5 space-y-2">
+            <div className="border-t border-line space-y-2 p-4 sm:p-5">
               {cartWeightKg > 0 && (
                 <div className="flex justify-between text-sm text-muted">
                   <span>{tr("checkout.cartWeight")}</span>
@@ -341,8 +349,8 @@ export default function CheckoutPage() {
                 </div>
               )}
               {deliveryFeeKrw > 0 && (
-                <div className="flex justify-between text-sm text-muted">
-                  <span>
+                <div className="flex justify-between gap-2 text-sm text-muted">
+                  <span className="min-w-0">
                     {isWeightBasedDelivery(methodId)
                       ? tr("checkout.deliveryFeeWeight", {
                           weight: formatWeightKg(deliveryCalc.billableKg, locale),
@@ -350,7 +358,7 @@ export default function CheckoutPage() {
                         })
                       : tr("checkout.deliveryFee")}
                   </span>
-                  <span>{formatCurrency(deliveryFeeDisplay, currency)}</span>
+                  <span className="shrink-0">{formatCurrency(deliveryFeeDisplay, currency)}</span>
                 </div>
               )}
               <div className="flex justify-between text-base font-semibold text-ink">
@@ -361,15 +369,17 @@ export default function CheckoutPage() {
                 <p className="text-xs text-muted">{tr("checkout.feeNote", { amount: formatCurrency(totalKrw, "KRW") })}</p>
               )}
               {error && (
-                <p className="mt-4 rounded-lg bg-sale/10 px-3 py-2 text-xs text-sale">{error}</p>
+                <p className="rounded-lg bg-sale/10 px-3 py-2 text-xs text-sale">{error}</p>
               )}
-              <button type="submit" disabled={submitting} className="btn-primary mt-4 w-full disabled:opacity-60">
-                <I.Box size={18} /> {submitting ? tr("checkout.submitting") : tr("checkout.submit")}
-              </button>
-              <p className="mt-3 text-center text-xs text-muted">{tr("checkout.excelNote")}</p>
             </div>
           </div>
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-line bg-surface p-4 text-xs text-muted">
+          <div className="checkout-submit-bar mt-4 max-lg:fixed max-lg:bottom-0 max-lg:left-0 max-lg:right-0 max-lg:z-30 max-lg:mt-0 max-lg:border-t max-lg:border-line max-lg:bg-surface/95 max-lg:p-4 max-lg:backdrop-blur-md max-lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-60">
+              <I.Box size={18} /> {submitting ? tr("checkout.submitting") : tr("checkout.submit")}
+            </button>
+            <p className="mt-2 text-center text-xs text-muted max-lg:hidden">{tr("checkout.excelNote")}</p>
+          </div>
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-line bg-surface p-4 text-xs text-muted max-lg:mb-24">
             <I.Info size={16} className="mt-0.5 shrink-0 text-accent" />
             {trSite("paymentNote")}
           </div>

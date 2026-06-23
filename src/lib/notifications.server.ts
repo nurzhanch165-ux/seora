@@ -6,6 +6,7 @@ import {
   sendTelegramMessage,
   telegramConfigured,
 } from "@/lib/telegram.server";
+import { sitePath } from "@/lib/siteUrl";
 
 const DEFAULT_TIKTOK = "https://www.tiktok.com/@shopkorea8";
 
@@ -88,7 +89,7 @@ export async function announceStream(input: AnnounceInput) {
         <h2>${title}</h2>
         <p>${body}</p>
         <p><a href="${link}">Смотреть стрим в TikTok</a></p>
-        <p><a href="https://sonyshopkorea.vercel.app/streams">Открыть стримы на сайте</a></p>
+        <p><a href="${sitePath("/streams")}">Открыть стримы на сайте</a></p>
       `;
       if (await sendEmail(customer.email, title, html)) sentEmail++;
     }

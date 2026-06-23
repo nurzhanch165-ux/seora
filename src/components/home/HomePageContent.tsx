@@ -87,12 +87,12 @@ function AboutBlock() {
           <div className="lg:col-span-7">
             <h2 className="h-display text-3xl sm:text-4xl lg:text-[2.75rem]">{tr("home.aboutHeading")}</h2>
             <p className="mt-5 max-w-[55ch] text-base leading-relaxed text-muted">{tr("home.aboutText")}</p>
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="mt-8 grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2">
               {sections.map((s) => (
                 <Link
                   key={s.slug}
                   href={`/c/${s.slug}`}
-                  className="group border border-line bg-surface p-5 transition-all hover:border-accent/40 hover:shadow-lift"
+                  className="group border border-line bg-surface p-3 transition-all hover:border-accent/40 hover:shadow-lift sm:p-5"
                 >
                   <p className="text-[10px] uppercase tracking-wider text-faint">{sectionTagline(s.slug, locale)}</p>
                   <p className="mt-2 font-display text-lg font-semibold text-ink group-hover:text-accent">
@@ -227,10 +227,10 @@ function StreamsPromo() {
   return (
     <section className="container-site mt-10 sm:mt-14">
       <Reveal>
-        <div className="relative min-h-[320px] overflow-hidden rounded-card sm:min-h-[380px]">
+        <div className="relative min-h-[280px] overflow-hidden rounded-card sm:min-h-[380px]">
           <Image src="/images/streams-bg.png" alt="" fill className="object-cover" sizes="(max-width: 1280px) 100vw, 1280px" />
           <div className="absolute inset-0 bg-ink/70" />
-          <div className="relative flex min-h-[320px] flex-col justify-end p-8 sm:min-h-[380px] sm:p-12 lg:max-w-xl">
+          <div className="relative flex min-h-[280px] flex-col justify-end p-5 sm:min-h-[380px] sm:p-12 lg:max-w-xl">
             <p className="text-[11px] font-semibold uppercase tracking-widest2 text-accent">{tr("home.streams.eyebrow")}</p>
             <h2 className="mt-3 h-display text-2xl text-pearl sm:text-3xl">{tr("home.streams.title")}</h2>
             <p className="mt-4 text-sm leading-relaxed text-pearl/70 sm:text-base">{tr("home.streams.text")}</p>

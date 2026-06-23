@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCustomerIdFromRequest } from "@/lib/customerSession.server";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const customerId = searchParams.get("customerId");
+export async function GET() {
+  const customerId = getCustomerIdFromRequest();
   if (!customerId) {
-    return NextResponse.json({ error: "Не указан customerId." }, { status: 400 });
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
   }
 
   const admin = createAdminClient();
@@ -21,9 +21,14 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const body = await req.json().catch(() => null) as { id?: string; customerId?: string } | null;
-  if (!body?.id || !body.customerId) {
-    return NextResponse.json({ error: "Некорректные данные." }, { status: 400 });
+  const customerId = getCustomerIdFromRequest();
+  if (!customerId) {
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => null) as { id?: string } | null;
+  if (!body?.id) {
+    return NextResponse.json({ error: "errors.generic" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -31,7 +36,7 @@ export async function PATCH(req: Request) {
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", body.id)
-    .eq("customer_id", body.customerId);
+    .eq("customer_id", customerId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

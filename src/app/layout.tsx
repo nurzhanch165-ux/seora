@@ -7,8 +7,10 @@ import { FloatingContacts } from "@/components/FloatingContacts";
 import { CartToast } from "@/components/CartToast";
 import { ExchangeRatesLoader } from "@/components/ExchangeRatesLoader";
 import { LocaleSync } from "@/components/LocaleSync";
+import { CustomerSessionLoader } from "@/components/CustomerSessionLoader";
 import { site } from "@/data/site";
 import { t } from "@/lib/i18n";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"],
@@ -25,6 +27,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: t("site.defaultTitle", "ru", { name: site.name }),
     template: `%s · ${site.name}`,
@@ -44,12 +47,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen overflow-x-hidden bg-pearl antialiased">
         <div className="grain-overlay" aria-hidden="true" />
         <Header />
-        <main className="min-h-[60vh]">{children}</main>
+        <main className="min-h-[60vh] pb-[calc(5rem+env(safe-area-inset-bottom))]">{children}</main>
         <Footer />
         <FloatingContacts />
         <CartToast />
         <ExchangeRatesLoader />
         <LocaleSync />
+        <CustomerSessionLoader />
       </body>
     </html>
   );

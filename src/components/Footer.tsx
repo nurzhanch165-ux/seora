@@ -103,7 +103,7 @@ export function Footer() {
       <div className="border-t border-line">
         <div className="container-site flex flex-col items-center justify-between gap-3 py-6 text-center text-xs text-faint md:flex-row md:text-left">
           <span>{tr("footer.copyright", { year: new Date().getFullYear(), name: site.name })}</span>
-          <span className="max-w-md leading-relaxed">{tr("footer.privacy")}</span>
+          <Link href="/privacy" className="max-w-md leading-relaxed hover:text-accent">{tr("footer.privacyLink")}</Link>
         </div>
       </div>
     </footer>
