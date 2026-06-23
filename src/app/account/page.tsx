@@ -49,11 +49,11 @@ export default function AccountOrdersPage() {
               <div key={order.id} className="card overflow-hidden">
                 <button
                   onClick={() => setOpenId(open ? null : order.id)}
-                  className="flex w-full items-center justify-between gap-4 p-5 text-left"
+                  className="flex w-full min-w-0 items-center justify-between gap-3 p-4 text-left sm:p-5"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-ink">{order.number}</span>
+                      <span className="break-all font-medium text-ink">{order.number}</span>
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(order.status)}`}>
                         {getStatusLabel(order.status, locale)}
                       </span>
@@ -66,11 +66,11 @@ export default function AccountOrdersPage() {
                 </button>
 
                 {open && (
-                  <div className="border-t border-line p-5">
+                  <div className="border-t border-line p-4 sm:p-5">
                     <div className="space-y-2.5">
                       {order.items.map((it) => (
-                        <div key={it.productId} className="flex items-center justify-between gap-3 text-sm">
-                          <Link href={`/product/${it.slug}`} className="text-ink hover:text-accent">
+                        <div key={it.productId} className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <Link href={`/product/${it.slug}`} className="min-w-0 break-words text-ink hover:text-accent">
                             {it.name}
                           </Link>
                           <span className="shrink-0 text-muted">{it.qty} × {formatPrice(it.price)}</span>

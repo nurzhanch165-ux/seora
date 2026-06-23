@@ -114,7 +114,11 @@
     @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted;
   }
   .field {
-    @apply w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-faint transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-0;
+    @apply w-full min-w-0 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-faint transition-colors duration-200 focus:border-accent focus:outline-none focus:ring-0;
+  }
+
+  .card-pad {
+    @apply p-4 sm:p-6;
   }
 
   .chip {

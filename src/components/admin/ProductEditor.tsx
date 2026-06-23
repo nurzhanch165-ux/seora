@@ -242,10 +242,15 @@ export function ProductEditor({
     <form onSubmit={submit} className="space-y-6">
       {/* Фото */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink">{tr("admin.product.photos")}</h3>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-ink">{tr("admin.product.photos")}</h3>
+          {form.images.length > 0 && (
+            <span className="text-xs text-muted">{form.images.length}</span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
           {form.images.map((src, i) => (
-            <div key={i} className="relative h-24 w-24 overflow-hidden rounded-xl border border-line">
+            <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-line sm:h-24 sm:w-24 sm:aspect-auto">
               <ProductVisual tone={form.tone} glyph={form.glyph} image={src} className="h-full w-full" />
               <button
                 type="button"
@@ -257,19 +262,22 @@ export function ProductEditor({
               </button>
             </div>
           ))}
-          <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line text-xs text-muted hover:border-accent hover:text-accent">
+          <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line px-2 text-center text-[11px] leading-tight text-muted hover:border-accent hover:text-accent sm:h-24 sm:w-24 sm:aspect-auto sm:text-xs">
             <I.Plus size={20} />
-            {uploading ? tr("admin.product.uploading") : tr("admin.product.addPhoto")}
+            {uploading ? tr("admin.product.uploading") : tr("admin.product.addPhotos")}
             <input
               type="file"
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(e) => onUpload(e.target.files)}
+              onChange={(e) => {
+                void onUpload(e.target.files);
+                e.target.value = "";
+              }}
             />
           </label>
         </div>
-        <p className="mt-2 text-xs text-faint">{tr("admin.product.photosHint")}</p>
+        <p className="mt-2 text-xs leading-relaxed text-faint">{tr("admin.product.photosHint")}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

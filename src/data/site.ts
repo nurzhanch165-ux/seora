@@ -17,7 +17,7 @@ export const site = {
     tiktokLink: "https://tiktok.com/@sonyshopkorea",
     youtube: "SonyShopKorea",
     youtubeLink: "https://youtube.com/@sonyshopkorea",
-    email: "hello@sonyshopkorea.com",
+    email: "sonyshopkorea@gmail.com",
     koreaPhone: "+82 10-4409-8203",
     address: "Республика Корея, г. Сеул — склад отправки",
   },

@@ -37,7 +37,7 @@ function configureWebPush() {
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "SonyShopKorea <orders@sonyshopkorea.com>";
+  const from = process.env.RESEND_FROM ?? "SonyShopKorea <sonyshopkorea@gmail.com>";
   if (!key || !to) return false;
   try {
     const res = await fetch("https://api.resend.com/emails", {

@@ -14,6 +14,7 @@ import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportI
 import { buildStreamPositionMap, type StreamPositionMap } from "@/lib/excelCore";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ProductEditor } from "@/components/admin/ProductEditor";
+import { StreamAnnouncePanel } from "@/components/admin/StreamAnnouncePanel";
 import { CategoryEditor } from "@/components/admin/CategoryEditor";
 import { StreamEditor } from "@/components/admin/StreamEditor";
 import { useCatalogTree } from "@/store/catalogTree";
@@ -500,7 +501,7 @@ function StreamsAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
         <h2 className="text-lg font-medium">{tr("admin.streams.newTitle")}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div><label className="field-label">{tr("admin.streams.name")}</label><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr("admin.streams.namePlaceholder")} /></div>
@@ -524,30 +525,19 @@ function StreamsAdmin() {
         <button onClick={createStream} className="btn-primary mt-4">{tr("admin.streams.create")}</button>
       </div>
 
-      <div className="card p-6">
-        <h2 className="text-lg font-medium">{tr("admin.streams.announceTitle")}</h2>
-        <p className="mt-1 text-sm text-muted">{tr("admin.streams.announceHint")}</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="field-label">{tr("admin.streams.announceHeading")}</label>
-            <input className="field" value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} placeholder={tr("admin.streams.announceDefaultTitle")} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="field-label">{tr("admin.streams.announceMessage")}</label>
-            <textarea className="field resize-none" rows={3} value={announceBody} onChange={(e) => setAnnounceBody(e.target.value)} placeholder={tr("admin.streams.announceDefaultBody")} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="field-label">TikTok</label>
-            <input className="field" value={announceTiktok} onChange={(e) => setAnnounceTiktok(e.target.value)} />
-          </div>
-        </div>
-        {announceResult && <p className="mt-3 text-sm text-accent">{announceResult}</p>}
-        <button onClick={sendAnnouncement} disabled={announceBusy} className="btn-accent mt-4">
-          {announceBusy ? tr("admin.streams.announceSending") : tr("admin.streams.announceSend")}
-        </button>
-      </div>
+      <StreamAnnouncePanel
+        title={announceTitle}
+        body={announceBody}
+        tiktokUrl={announceTiktok}
+        onTitleChange={setAnnounceTitle}
+        onBodyChange={setAnnounceBody}
+        onTiktokChange={setAnnounceTiktok}
+        onSend={sendAnnouncement}
+        sending={announceBusy}
+        result={announceResult}
+      />
 
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
         <h2 className="text-lg font-medium">{tr("admin.streams.allTitle", { count: streams.length })}</h2>
         <div className="mt-4 space-y-2">
           {streams.map((s) => (

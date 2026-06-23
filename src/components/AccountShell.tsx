@@ -68,7 +68,7 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
             </p>
             <p className="mt-0.5 text-xs text-muted">{account ? account.phone : tr("account.serviceLogin")}</p>
           </div>
-          <nav className="no-scrollbar flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible lg:rounded-card lg:border lg:border-line lg:bg-surface">
+          <nav className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto scroll-pl-4 px-4 pb-1 sm:-mx-0 sm:px-0 lg:flex-col lg:overflow-visible lg:rounded-card lg:border lg:border-line lg:bg-surface lg:pb-0">
             {nav.map((item) => {
               const active = pathname === item.href;
               const Icon = item.icon;
@@ -76,7 +76,7 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm transition-colors lg:gap-3 lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-5 lg:py-3.5 lg:last:border-0 ${
+                  className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] transition-colors sm:px-4 sm:py-2.5 sm:text-sm lg:gap-3 lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-5 lg:py-3.5 lg:last:border-0 ${
                     active
                       ? "border-accent bg-accent-soft font-medium text-accent lg:bg-accent-soft"
                       : "border-line bg-surface text-muted hover:border-accent/30 hover:text-ink lg:border-0 lg:bg-transparent lg:hover:bg-ink/5"

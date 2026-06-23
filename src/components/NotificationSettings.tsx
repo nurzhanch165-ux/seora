@@ -93,14 +93,14 @@ export function NotificationSettings() {
   if (!account) return null;
 
   return (
-    <div className="card p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">{tr("notifications.title")}</h2>
-        <p className="mt-1 text-sm text-muted">{tr("notifications.hint")}</p>
+    <div className="card min-w-0 overflow-hidden p-4 sm:p-6">
+      <div className="min-w-0">
+        <h2 className="text-base font-medium sm:text-lg">{tr("notifications.title")}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-muted">{tr("notifications.hint")}</p>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <button type="button" onClick={enablePush} className="btn-outline">
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+        <button type="button" onClick={enablePush} className="btn-outline w-full justify-center sm:w-auto">
           <I.Sparkle size={18} /> {tr("notifications.enablePush")}
         </button>
         {telegramUrl && (
@@ -108,27 +108,27 @@ export function NotificationSettings() {
             href={telegramUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`btn-outline ${telegramConnected ? "border-emerald-400 text-emerald-700" : ""}`}
+            className={`btn-outline w-full justify-center sm:w-auto ${telegramConnected ? "border-emerald-400 text-emerald-700" : ""}`}
           >
             <I.Telegram size={18} /> {telegramConnected ? tr("notifications.telegramConnected") : tr("notifications.connectTelegram")}
           </a>
         )}
-        <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="btn-outline">
+        <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="btn-outline w-full justify-center sm:w-auto">
           TikTok
         </a>
       </div>
-      {pushState === "unsupported" && <p className="text-xs text-muted">{tr("notifications.pushUnsupported")}</p>}
-      {msg && <p className="text-sm text-accent">{msg}</p>}
+      {pushState === "unsupported" && <p className="mt-2 text-xs leading-relaxed text-muted">{tr("notifications.pushUnsupported")}</p>}
+      {msg && <p className="mt-2 break-words text-sm text-accent">{msg}</p>}
 
       {items.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="mt-4 space-y-3">
           {items.map((n) => (
             <li
               key={n.id}
-              className={`rounded-xl border border-line p-4 ${n.read_at ? "opacity-70" : "bg-accent-soft/30"}`}
+              className={`min-w-0 rounded-xl border border-line p-3 sm:p-4 ${n.read_at ? "opacity-70" : "bg-accent-soft/30"}`}
             >
-              <p className="font-medium text-ink">{n.title}</p>
-              <p className="mt-1 text-sm text-muted">{n.body}</p>
+              <p className="break-words font-medium text-ink">{n.title}</p>
+              <p className="mt-1 break-words text-sm leading-relaxed text-muted">{n.body}</p>
               <div className="mt-3 flex flex-wrap gap-3 text-xs">
                 {n.link && (
                   <a href={n.link} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
@@ -147,10 +147,10 @@ export function NotificationSettings() {
       )}
 
       {items.length === 0 && (
-        <p className="text-sm text-muted">{tr("notifications.empty")}</p>
+        <p className="mt-4 text-sm text-muted">{tr("notifications.empty")}</p>
       )}
 
-      <p className="text-xs text-faint">
+      <p className="mt-4 break-words text-xs leading-relaxed text-faint">
         {tr("notifications.channels")}{" "}
         <Link href="/account/profile" className="text-accent hover:underline">{tr("account.profile")}</Link>
       </p>
