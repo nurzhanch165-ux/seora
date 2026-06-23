@@ -3,7 +3,8 @@ import { Onest, Manrope } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { FloatingContacts } from "@/components/FloatingContacts";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartToast } from "@/components/CartToast";
 import { ExchangeRatesLoader } from "@/components/ExchangeRatesLoader";
 import { LocaleSync } from "@/components/LocaleSync";
@@ -51,9 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen overflow-x-hidden bg-pearl antialiased">
         <div className="grain-overlay" aria-hidden="true" />
         <Header />
-        <main className="min-h-[60vh] pb-[calc(5rem+env(safe-area-inset-bottom))]">{children}</main>
+        <main className="flex min-h-[60vh] flex-col">
+          <div className="min-w-0 flex-1">{children}</div>
+          <MobileBottomNav />
+        </main>
         <Footer />
-        <FloatingContacts />
+        <ScrollToTop />
         <CartToast />
         <ExchangeRatesLoader />
         <LocaleSync />

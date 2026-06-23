@@ -87,6 +87,27 @@ export const ChevronLeft = (p: IconProps) => (
   </Base>
 );
 
+export const ChevronUp = (p: IconProps) => (
+  <Base {...p}>
+    <path d="m6 15 6-6 6 6" />
+  </Base>
+);
+
+export const Home = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9V20.5H5.5A1.5 1.5 0 0 1 4 19v-8.5Z" />
+  </Base>
+);
+
+export const Grid = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="4" y="4" width="6.5" height="6.5" rx="1.2" />
+    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2" />
+    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2" />
+    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2" />
+  </Base>
+);
+
 export const ArrowRight = (p: IconProps) => (
   <Base {...p}>
     <path d="M4 12h15m0 0-6-6m6 6-6 6" />

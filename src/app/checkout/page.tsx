@@ -373,13 +373,13 @@ export default function CheckoutPage() {
               )}
             </div>
           </div>
-          <div className="checkout-submit-bar mt-4 max-lg:fixed max-lg:bottom-0 max-lg:left-0 max-lg:right-0 max-lg:z-30 max-lg:mt-0 max-lg:border-t max-lg:border-line max-lg:bg-surface/95 max-lg:p-4 max-lg:backdrop-blur-md max-lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="checkout-submit-bar mt-4">
             <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-60">
               <I.Box size={18} /> {submitting ? tr("checkout.submitting") : tr("checkout.submit")}
             </button>
-            <p className="mt-2 text-center text-xs text-muted max-lg:hidden">{tr("checkout.excelNote")}</p>
+            <p className="mt-2 text-center text-xs text-muted">{tr("checkout.excelNote")}</p>
           </div>
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-line bg-surface p-4 text-xs text-muted max-lg:mb-24">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-line bg-surface p-4 text-xs text-muted">
             <I.Info size={16} className="mt-0.5 shrink-0 text-accent" />
             {trSite("paymentNote")}
           </div>

@@ -5,6 +5,8 @@ import { countryEn, countryKo, countryRu } from "./countryMessages";
 
 export const ru: Dict = {
   "nav.catalog": "Каталог",
+  "nav.home": "Главная",
+  "nav.mobileBottom": "Быстрая навигация",
   "nav.streams": "Стримы",
   "nav.sale": "Акции",
   "nav.brands": "Бренды",
@@ -226,6 +228,7 @@ export const ru: Dict = {
   "privacy.s4": "Вы можете запросить изменение или удаление данных, написав нам в WhatsApp или Telegram. По вопросам: sonyshopkorea@gmail.com.",
   "common.loading": "Загрузка…",
   "common.close": "Закрыть",
+  "common.scrollToTop": "Наверх",
   "common.save": "Сохранить",
   "common.saved": "Сохранено",
   "common.copy": "Скопировать",
@@ -432,6 +435,8 @@ export const ru: Dict = {
 
 export const en: Dict = {
   "nav.catalog": "Catalog",
+  "nav.home": "Home",
+  "nav.mobileBottom": "Quick navigation",
   "nav.streams": "Streams",
   "nav.sale": "Sale",
   "nav.brands": "Brands",
@@ -653,6 +658,7 @@ export const en: Dict = {
   "privacy.s4": "You may request correction or deletion by contacting us on WhatsApp or Telegram. Questions: sonyshopkorea@gmail.com.",
   "common.loading": "Loading…",
   "common.close": "Close",
+  "common.scrollToTop": "Back to top",
   "common.save": "Save",
   "common.saved": "Saved",
   "common.copy": "Copy",
@@ -859,6 +865,8 @@ export const en: Dict = {
 
 export const ko: Dict = {
   "nav.catalog": "카탈로그",
+  "nav.home": "홈",
+  "nav.mobileBottom": "빠른 탐색",
   "nav.streams": "스트림",
   "nav.sale": "세일",
   "nav.brands": "브랜드",
@@ -1080,6 +1088,7 @@ export const ko: Dict = {
   "privacy.s4": "WhatsApp 또는 Telegram으로 연락하여 수정 또는 삭제를 요청할 수 있습니다. 문의: sonyshopkorea@gmail.com.",
   "common.loading": "로딩 중…",
   "common.close": "닫기",
+  "common.scrollToTop": "맨 위로",
   "common.save": "저장",
   "common.saved": "저장됨",
   "common.copy": "복사",

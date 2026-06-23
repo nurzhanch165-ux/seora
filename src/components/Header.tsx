@@ -92,7 +92,7 @@ export function Header() {
 
   return (
     <>
-      <div className="relative sticky top-0 z-40">
+      <div className="relative z-40">
       <header className="relative border-b border-line bg-pearl shadow-soft">
         <div className="hidden border-b border-line/60 bg-ink md:block">
           <div className="container-site flex h-9 items-center gap-3 text-[11px] text-pearl/80">

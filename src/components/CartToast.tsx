@@ -22,7 +22,7 @@ export function CartToast() {
   if (!visible) return null;
 
   return (
-    <div className="animate-fadeUp fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 sm:bottom-8">
+    <div className="animate-fadeUp fixed left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">
       <div className="flex items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-lift">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
           <I.Check size={20} />
