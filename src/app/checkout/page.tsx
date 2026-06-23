@@ -16,7 +16,7 @@ import { exportOrderExcel } from "@/lib/excel";
 import { useExchangeRates } from "@/store/exchangeRates";
 import { convertFromKrw, formatCurrency } from "@/lib/currency";
 import { useT, useSiteText, useLocale } from "@/hooks/useTranslation";
-import { getCountries, deliveryMethodLabel, getDeliveryMethods, defaultMethod, calculateDeliveryFeeKrw, isWeightBasedDelivery, type DeliveryMethodId } from "@/lib/delivery";
+import { getCountries, deliveryMethodLabel, getDeliveryMethodsForCheckout, defaultMethodForCheckout, calculateDeliveryFeeKrw, isWeightBasedDelivery, type DeliveryMethodId } from "@/lib/delivery";
 import { cartTotalWeightKg, formatWeightKg } from "@/lib/productWeight";
 import { localizedProduct } from "@/lib/productI18n";
 import { Customer, Delivery } from "@/lib/types";
@@ -91,18 +91,26 @@ export default function CheckoutPage() {
   const deliveryFeeDisplay = convertFromKrw(deliveryFeeKrw, currency, rates).total;
 
   const deliveryMethods = useMemo(
-    () => getDeliveryMethods(delivery.country || customer.country, locale),
+    () => getDeliveryMethodsForCheckout(delivery.country, customer.country, locale),
     [delivery.country, customer.country, locale]
   );
+
+  const effectiveCountry = delivery.country.trim() || customer.country.trim();
 
   const countries = useMemo(() => getCountries(locale), [locale]);
 
   useEffect(() => {
-    if (delivery.country || customer.country) {
-      const def = defaultMethod(delivery.country || customer.country, locale);
+    if (effectiveCountry) {
+      const def = defaultMethodForCheckout(delivery.country, customer.country, locale);
       setMethodId(def.id);
     }
-  }, [delivery.country, customer.country, locale]);
+  }, [delivery.country, customer.country, effectiveCountry, locale]);
+
+  useEffect(() => {
+    if (deliveryMethods.length > 0 && !deliveryMethods.some((m) => m.id === methodId)) {
+      setMethodId(deliveryMethods[0].id);
+    }
+  }, [deliveryMethods, methodId]);
 
   useEffect(() => {
     adminCheck();
@@ -281,25 +289,42 @@ export default function CheckoutPage() {
               <Field label={`${tr("checkout.field.recipientPhone")} ${tr("checkout.required")}`} value={delivery.recipientPhone} onChange={(v) => setDelivery({ ...delivery, recipientPhone: v })} />
             </div>
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-              <Field label={`${tr("checkout.field.country")} ${tr("checkout.required")}`} value={delivery.country} onChange={(v) => setDelivery({ ...delivery, country: v })} />
+              <div>
+                <label className="field-label">{`${tr("checkout.field.country")} ${tr("checkout.required")}`}</label>
+                <select
+                  value={delivery.country}
+                  onChange={(e) => setDelivery({ ...delivery, country: e.target.value })}
+                  className="field"
+                  required
+                >
+                  <option value="">{tr("checkout.selectCountry")}</option>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
               <Field label={`${tr("checkout.field.city")} ${tr("checkout.required")}`} value={delivery.city} onChange={(v) => setDelivery({ ...delivery, city: v })} />
               <Field label={tr("checkout.field.zip")} value={delivery.zip} onChange={(v) => setDelivery({ ...delivery, zip: v })} />
             </div>
             <Field label={`${tr("checkout.field.address")} ${tr("checkout.required")}`} value={delivery.address} onChange={(v) => setDelivery({ ...delivery, address: v })} />
             <div>
               <label className="field-label">{tr("checkout.deliveryMethod")}</label>
-              <div className="flex flex-wrap gap-2">
-                {deliveryMethods.map((m) => (
-                  <button
-                    type="button"
-                    key={m.id}
-                    onClick={() => setMethodId(m.id)}
-                    className={`chip ${methodId === m.id ? "border-accent bg-accent-soft text-accent" : ""}`}
-                  >
-                    {deliveryMethodLabel(m.id, locale)}{m.priceNote ? ` · ${m.priceNote}` : ""}
-                  </button>
-                ))}
-              </div>
+              {deliveryMethods.length === 0 ? (
+                <p className="text-sm text-muted">{tr("checkout.selectCountryForDelivery")}</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {deliveryMethods.map((m) => (
+                    <button
+                      type="button"
+                      key={m.id}
+                      onClick={() => setMethodId(m.id)}
+                      className={`chip max-w-full whitespace-normal text-left ${methodId === m.id ? "border-accent bg-accent-soft text-accent" : ""}`}
+                    >
+                      {m.label}{m.priceNote ? ` · ${m.priceNote}` : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </Section>
 

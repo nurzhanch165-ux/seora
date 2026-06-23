@@ -91,6 +91,16 @@ export function getCountries(locale: Locale): string[] {
 
 function localizeMethod(id: DeliveryMethodId, locale: Locale): DeliveryMethod {
   const price = PRICE_USD_PER_KG[id];
+  if (id === "domestic") {
+    const fee = domesticDeliveryFeeKrw();
+    return {
+      id,
+      label: deliveryMethodLabel(id, locale),
+      labelExcel: METHOD_EXCEL[id],
+      description: t(METHOD_DESC_I18N[id], locale),
+      priceNote: t("delivery.domesticFixed", locale, { price: fee.toLocaleString("ru-RU") }),
+    };
+  }
   return {
     id,
     label: deliveryMethodLabel(id, locale),
@@ -102,20 +112,48 @@ function localizeMethod(id: DeliveryMethodId, locale: Locale): DeliveryMethod {
 
 export function detectRegion(country: string): CountryRegion {
   const c = country.trim().toLowerCase();
+  if (!c) return "other";
+
   for (const id of COUNTRY_IDS) {
     for (const loc of ["ru", "en", "ko"] as Locale[]) {
       if (t(`country.${id}`, loc).toLowerCase() === c) return regionForCountryId(id);
     }
   }
+
+  if (
+    c.includes("коре") || c.includes("korea") || c.includes("한국") || c.includes("대한")
+    || c === "kr" || c === "rok" || c.includes("republic of korea") || c.includes("south korea")
+  ) {
+    return "korea";
+  }
   if (c.includes("казахстан") || c === "kz" || c.includes("kazakhstan")) return "kazakhstan";
-  if (c.includes("korea") || c.includes("кorea") || c.includes("коре")) return "korea";
   if (EUROPE_COUNTRIES.some((e) => e.toLowerCase() === c)) return "europe";
   return "other";
 }
 
+/** Методы доставки по стране получения (адрес доставки). */
 export function getDeliveryMethods(country: string, locale: Locale = "ru"): DeliveryMethod[] {
-  const region = detectRegion(country);
+  const trimmed = country.trim();
+  if (!trimmed) return [];
+
+  const region = detectRegion(trimmed);
   return METHOD_DEFS[region].map((id) => localizeMethod(id, locale));
+}
+
+/** Методы с учётом адреса доставки и страны клиента (domestic, если любая из них — Корея). */
+export function getDeliveryMethodsForCheckout(
+  deliveryCountry: string,
+  customerCountry: string,
+  locale: Locale = "ru"
+): DeliveryMethod[] {
+  const primary = deliveryCountry.trim() || customerCountry.trim();
+  const methods = getDeliveryMethods(primary, locale);
+  if (methods.length > 0) return methods;
+
+  if (detectRegion(customerCountry) === "korea") {
+    return METHOD_DEFS.korea.map((id) => localizeMethod(id, locale));
+  }
+  return [];
 }
 
 export function methodById(country: string, id: DeliveryMethodId, locale: Locale = "ru"): DeliveryMethod | undefined {
@@ -123,7 +161,19 @@ export function methodById(country: string, id: DeliveryMethodId, locale: Locale
 }
 
 export function defaultMethod(country: string, locale: Locale = "ru"): DeliveryMethod {
-  return getDeliveryMethods(country, locale)[0];
+  const methods = getDeliveryMethods(country, locale);
+  if (methods.length > 0) return methods[0];
+  return localizeMethod("ems", locale);
+}
+
+export function defaultMethodForCheckout(
+  deliveryCountry: string,
+  customerCountry: string,
+  locale: Locale = "ru"
+): DeliveryMethod {
+  const methods = getDeliveryMethodsForCheckout(deliveryCountry, customerCountry, locale);
+  if (methods.length > 0) return methods[0];
+  return localizeMethod("ems", locale);
 }
 
 /** Фиксированная доставка внутри Кореи (₩), можно переопределить через env */

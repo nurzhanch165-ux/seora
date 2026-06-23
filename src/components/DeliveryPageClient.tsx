@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { domesticDeliveryFeeKrw } from "@/lib/delivery";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useT, useSiteText } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
@@ -49,7 +50,7 @@ export function DeliveryPageClient() {
         <CountryCard
           flag="KR"
           title={tr("delivery.kr")}
-          methods={[{ name: tr("delivery.domestic"), price: "—", desc: tr("delivery.domesticDesc") }]}
+          methods={[{ name: tr("delivery.domestic"), price: `₩${domesticDeliveryFeeKrw().toLocaleString("ru-RU")}`, desc: tr("delivery.domesticDesc") }]}
         />
       </div>
 
