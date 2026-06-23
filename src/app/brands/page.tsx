@@ -1,7 +1,10 @@
 import { BrandsPageClient } from "@/components/brands/BrandsPageClient";
 import { t } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale.server";
 
-export const metadata = { title: t("brands.title", "ru") };
+export function generateMetadata() {
+  return { title: t("brands.title", getRequestLocale()) };
+}
 
 export default function BrandsPage() {
   return <BrandsPageClient />;

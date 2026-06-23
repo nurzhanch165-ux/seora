@@ -11,6 +11,7 @@ import { CustomerSessionLoader } from "@/components/CustomerSessionLoader";
 import { site } from "@/data/site";
 import { t } from "@/lib/i18n";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { getRequestLocale } from "@/lib/locale.server";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"],
@@ -26,14 +27,17 @@ const manrope = Manrope({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
-  title: {
-    default: t("site.defaultTitle", "ru", { name: site.name }),
-    template: `%s · ${site.name}`,
-  },
-  description: t("site.description", "ru"),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = getRequestLocale();
+  return {
+    metadataBase: new URL(getSiteUrl()),
+    title: {
+      default: t("site.defaultTitle", locale, { name: site.name }),
+      template: `%s · ${site.name}`,
+    },
+    description: t("site.description", locale),
+  };
+}
 
 export const viewport = {
   width: "device-width",

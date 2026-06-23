@@ -1,7 +1,10 @@
 import { DeliveryPageClient } from "@/components/DeliveryPageClient";
 import { t } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/locale.server";
 
-export const metadata = { title: t("delivery.breadcrumb", "ru") };
+export function generateMetadata() {
+  return { title: t("delivery.breadcrumb", getRequestLocale()) };
+}
 
 export default function DeliveryPage() {
   return <DeliveryPageClient />;

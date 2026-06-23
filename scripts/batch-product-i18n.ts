@@ -1,13 +1,14 @@
 /**
  * Batch-generate products.i18n (EN/KO) for all products via MyMemory API.
  * npx tsx scripts/batch-product-i18n.ts
+ * npx tsx scripts/batch-product-i18n.ts --force   # retranslate all
  */
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { mapProductRow, type ProductRow } from "../src/lib/supabase/products";
 import { productFieldsFromProduct } from "../src/lib/productI18n";
-import { buildProductI18n } from "../src/lib/translate.server";
+import { buildProductI18n } from "../src/lib/translateProduct";
 
 function loadEnv() {
   const path = resolve(process.cwd(), ".env.local");
@@ -21,8 +22,14 @@ function loadEnv() {
 
 loadEnv();
 
+const force = process.argv.includes("--force");
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function isComplete(i18n: ReturnType<typeof mapProductRow>["i18n"]): boolean {
+  if (!i18n?.en?.name?.trim() || !i18n?.ko?.name?.trim()) return false;
+  return true;
+}
 
 async function main() {
   if (!url || !key) {
@@ -31,36 +38,45 @@ async function main() {
   }
 
   const admin = createClient(url, key);
-  const { data, error } = await admin.from("products").select("*");
+  const { data, error } = await admin.from("products").select("*").order("id");
   if (error) throw error;
+
+  const rows = data as ProductRow[];
+  console.log(`Products: ${rows.length}, force: ${force}`);
 
   let updated = 0;
   let skipped = 0;
+  let failed = 0;
 
-  for (const row of data as ProductRow[]) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
     const product = mapProductRow(row);
-    const hasI18n = product.i18n?.en?.name && product.i18n?.ko?.name;
-    if (hasI18n) {
+
+    if (!force && isComplete(product.i18n)) {
       skipped++;
       continue;
     }
+
+    process.stdout.write(`[${i + 1}/${rows.length}] ${product.name.slice(0, 50)}… `);
 
     try {
       const i18n = await buildProductI18n(productFieldsFromProduct(product));
       const { error: upErr } = await admin.from("products").update({ i18n }).eq("id", row.id);
       if (upErr) {
-        console.error(row.id, upErr.message);
+        failed++;
+        console.log(`FAIL: ${upErr.message}`);
       } else {
         updated++;
-        console.log(`✓ ${row.id}: ${product.name}`);
+        console.log("OK");
       }
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 1200));
     } catch (e) {
-      console.error(row.id, e);
+      failed++;
+      console.log(`ERR: ${e instanceof Error ? e.message : e}`);
     }
   }
 
-  console.log(`Done. Updated: ${updated}, skipped (already had i18n): ${skipped}.`);
+  console.log(`\nDone. Updated: ${updated}, skipped: ${skipped}, failed: ${failed}.`);
 }
 
 main();

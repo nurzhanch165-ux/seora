@@ -6,7 +6,8 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "lint": "next lint"
+    "lint": "next lint",
+    "i18n:products": "tsx scripts/batch-product-i18n.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.45.4",
