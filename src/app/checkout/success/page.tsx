@@ -23,7 +23,7 @@ function SuccessInner() {
   if (!hydrated) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
 
   return (
-    <div className="container-site py-12">
+    <div className="container-site pb-[calc(5.5rem+env(safe-area-inset-bottom))] py-8 sm:pb-12 md:pb-12">
       <div className="mx-auto max-w-2xl">
         <div className="flex flex-col items-center text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success">

@@ -28,7 +28,7 @@ export function PaymentRequisites({ amount, className = "" }: PaymentRequisitesP
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink">
           {tr("payment.kzTitle")}
         </h3>
-        <dl className="space-y-2">
+        <dl className="space-y-3">
           <Row
             label={tr("payment.phone")}
             value={`${kz.phone} · ${kz.phoneHolder}`}
@@ -51,7 +51,7 @@ export function PaymentRequisites({ amount, className = "" }: PaymentRequisitesP
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink">
           {tr("payment.krTitle")}
         </h3>
-        <dl className="space-y-2">
+        <dl className="space-y-3">
           <Row label={tr("payment.bank")} value={kr.bank} />
           <Row label={tr("payment.recipient")} value={kr.recipient} />
           <Row
@@ -93,10 +93,10 @@ function Row({
   copyLabel?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <dt className="shrink-0 text-muted">{label}</dt>
-      <dd className="flex min-w-0 items-center gap-2 text-right font-medium text-ink">
-        <span className="break-all">{value}</span>
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted sm:text-sm sm:normal-case sm:tracking-normal">{label}</dt>
+      <dd className="flex min-w-0 items-center gap-2 sm:text-right">
+        <span className="break-all text-sm font-medium text-ink sm:text-base">{value}</span>
         {onCopy && (
           <button
             type="button"

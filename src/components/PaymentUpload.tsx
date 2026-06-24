@@ -37,18 +37,20 @@ export function PaymentUpload({ orderId }: { orderId: string }) {
     <div>
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       {screenshot ? (
-        <div className="flex items-center gap-4 rounded-xl border border-success/40 bg-success/5 p-4">
+        <div className="flex flex-col gap-3 rounded-xl border border-success/40 bg-success/5 p-4 sm:flex-row sm:items-center sm:gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={screenshot} alt={tr("payment.screenshotAlt")} className="h-20 w-20 rounded-lg object-cover" />
-          <div className="flex-1">
+          <img src={screenshot} alt={tr("payment.screenshotAlt")} className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+          <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1.5 text-sm font-medium text-success">
               <I.Check size={16} /> {tr("payment.uploaded")}
             </p>
-            <p className="text-xs text-muted">
+            <p className="mt-0.5 text-xs text-muted">
               {order?.paymentConfirmed ? tr("payment.confirmed") : tr("payment.awaiting")}
             </p>
           </div>
-          <button onClick={() => inputRef.current?.click()} className="btn-ghost text-xs">{tr("payment.replace")}</button>
+          <button type="button" onClick={() => inputRef.current?.click()} className="btn-ghost w-full text-xs sm:w-auto">
+            {tr("payment.replace")}
+          </button>
         </div>
       ) : (
         <button

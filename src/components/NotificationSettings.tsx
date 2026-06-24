@@ -99,8 +99,8 @@ export function NotificationSettings() {
         <p className="mt-1 text-sm leading-relaxed text-muted">{tr("notifications.hint")}</p>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-        <button type="button" onClick={enablePush} className="btn-outline w-full justify-center sm:w-auto">
+      <div className="mt-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-3">
+        <button type="button" onClick={enablePush} className="btn-outline w-full justify-center lg:w-auto">
           <I.Sparkle size={18} /> {tr("notifications.enablePush")}
         </button>
         {telegramUrl && (
@@ -108,12 +108,12 @@ export function NotificationSettings() {
             href={telegramUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`btn-outline w-full justify-center sm:w-auto ${telegramConnected ? "border-emerald-400 text-emerald-700" : ""}`}
+            className={`btn-outline w-full justify-center lg:w-auto ${telegramConnected ? "border-emerald-400 text-emerald-700" : ""}`}
           >
             <I.Telegram size={18} /> {telegramConnected ? tr("notifications.telegramConnected") : tr("notifications.connectTelegram")}
           </a>
         )}
-        <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="btn-outline w-full justify-center sm:w-auto">
+        <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="btn-outline w-full justify-center lg:w-auto">
           TikTok
         </a>
       </div>

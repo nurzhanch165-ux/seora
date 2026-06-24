@@ -30,11 +30,8 @@ export default function AccountOrdersPage() {
 
   return (
     <AccountShell title={tr("account.myOrders")}>
-      <div className="mb-8">
-        <NotificationSettings />
-      </div>
       {myOrders.length === 0 ? (
-        <div className="card flex flex-col items-center gap-4 py-20 text-center">
+        <div className="card flex flex-col items-center gap-4 py-16 text-center sm:py-20">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent">
             <I.Box size={26} />
           </span>
@@ -49,21 +46,22 @@ export default function AccountOrdersPage() {
             return (
               <div key={order.id} className="card overflow-hidden">
                 <button
+                  type="button"
                   onClick={() => setOpenId(open ? null : order.id)}
-                  className="flex w-full min-w-0 items-center justify-between gap-3 p-4 text-left sm:p-5"
+                  className="flex w-full min-w-0 items-start justify-between gap-3 p-4 text-left sm:items-center sm:p-5"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                       <span className="break-all font-medium text-ink">{order.number}</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(order.status)}`}>
+                      <span className={`w-fit rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusTone(order.status)}`}>
                         {getStatusLabel(order.status, locale)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted">
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted">
                       {formatDate(order.createdAt)} · {tr("common.items", { count: order.items.length })} · {formatPrice(order.total)}
                     </p>
                   </div>
-                  <I.ChevronDown size={20} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+                  <I.ChevronDown size={20} className={`mt-0.5 shrink-0 text-muted transition-transform sm:mt-0 ${open ? "rotate-180" : ""}`} />
                 </button>
 
                 {open && (
@@ -85,7 +83,7 @@ export default function AccountOrdersPage() {
                     </div>
 
                     {order.comment && (
-                      <p className="mt-3 rounded-lg bg-paper px-3 py-2 text-xs text-muted">
+                      <p className="mt-3 break-words rounded-lg bg-paper px-3 py-2 text-xs text-muted">
                         {tr("account.comment")}: {order.comment}
                       </p>
                     )}
@@ -101,7 +99,7 @@ export default function AccountOrdersPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button onClick={() => void exportOrderExcel(order)} className="btn-outline text-sm">
+                      <button type="button" onClick={() => void exportOrderExcel(order)} className="btn-outline w-full text-sm sm:w-auto">
                         <I.Download size={16} /> {tr("account.excelOrder")}
                       </button>
                     </div>
@@ -112,6 +110,10 @@ export default function AccountOrdersPage() {
           })}
         </div>
       )}
+
+      <div className="mt-8">
+        <NotificationSettings />
+      </div>
     </AccountShell>
   );
 }
