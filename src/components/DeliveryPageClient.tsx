@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { domesticDeliveryFeeKrw } from "@/lib/delivery";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { PaymentRequisites } from "@/components/PaymentRequisites";
 import { useT, useSiteText } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
@@ -57,7 +58,8 @@ export function DeliveryPageClient() {
       <div className="mt-12 card p-6 md:p-8">
         <h2 className="text-lg font-medium text-ink">{tr("delivery.paymentTitle")}</h2>
         <p className="mt-2 text-sm text-muted">{tr("delivery.paymentText")}</p>
-        <Link href="/checkout" className="btn-primary mt-4 inline-flex">
+        <PaymentRequisites className="mt-5" />
+        <Link href="/checkout" className="btn-primary mt-6 inline-flex">
           {tr("cart.checkout")}
           <I.ArrowRight size={18} />
         </Link>

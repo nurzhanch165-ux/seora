@@ -17,6 +17,7 @@ import { ProductEditor } from "@/components/admin/ProductEditor";
 import { StreamAnnouncePanel } from "@/components/admin/StreamAnnouncePanel";
 import { CategoryEditor } from "@/components/admin/CategoryEditor";
 import { StreamEditor } from "@/components/admin/StreamEditor";
+import { PaymentRequisites } from "@/components/PaymentRequisites";
 import { useCatalogTree } from "@/store/catalogTree";
 import { useAdminSession } from "@/hooks/useAdminSession";
 import { useT, useLocale } from "@/hooks/useTranslation";
@@ -242,6 +243,9 @@ function OrdersAdmin() {
                     ) : (
                       <p className="text-sm text-muted">{tr("admin.orders.noScreenshot")}</p>
                     )}
+
+                    <h4 className="mb-3 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">{tr("payment.requisitesTitle")}</h4>
+                    <PaymentRequisites amount={order.total} />
 
                     <button onClick={() => void exportOrderExcel(order)} className="btn-outline mt-4 text-sm">
                       <I.Download size={16} /> {tr("admin.orders.exportExcel")}

@@ -9,6 +9,7 @@ import { getStatusLabel, statusTone } from "@/lib/types";
 import { exportOrderExcel } from "@/lib/excel";
 import { AccountShell } from "@/components/AccountShell";
 import { PaymentUpload } from "@/components/PaymentUpload";
+import { PaymentRequisites } from "@/components/PaymentRequisites";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { useT, useLocale } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
@@ -88,6 +89,11 @@ export default function AccountOrdersPage() {
                         {tr("account.comment")}: {order.comment}
                       </p>
                     )}
+
+                    <div className="mt-5">
+                      <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink">{tr("payment.requisitesTitle")}</h4>
+                      <PaymentRequisites amount={order.total} />
+                    </div>
 
                     <div className="mt-5">
                       <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">{tr("account.payment")}</h4>

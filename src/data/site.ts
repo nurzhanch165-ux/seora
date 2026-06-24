@@ -22,9 +22,18 @@ export const site = {
     address: "Республика Корея, г. Сеул — склад отправки",
   },
   payment: {
-    bank: "Kaspi Bank",
-    cardNumber: "4400 0000 0000 0000",
-    cardHolder: "SONYSHOPKOREA TRADE",
+    kazakhstan: {
+      title: "KASPI GOLD",
+      phone: "+77007703135",
+      phoneHolder: "Аимгуль М",
+      cardNumber: "4400 4302 0348 5906",
+      cardHolder: "AIMGUL MUSSINA",
+    },
+    korea: {
+      bank: "WOORI BANK (우리은행)",
+      recipient: "MUSSINA BIBIGUL",
+      accountNumber: "1002-761-434093",
+    },
     note: "После оплаты загрузите скриншот в личном кабинете — менеджер подтвердит заказ.",
   },
   shippingNote:

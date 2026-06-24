@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { useOrders } from "@/store/orders";
-import { site } from "@/data/site";
 import { formatPrice } from "@/lib/format";
 import { useHydrated } from "@/lib/useHydrated";
 import { exportOrderExcel } from "@/lib/excel";
 import { PaymentUpload } from "@/components/PaymentUpload";
+import { PaymentRequisites } from "@/components/PaymentRequisites";
 import { useT, useSiteText } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
 
@@ -17,15 +17,8 @@ function SuccessInner() {
   const number = params.get("n") ?? "";
   const hydrated = useHydrated();
   const order = useOrders((s) => s.orders.find((o) => o.number === number));
-  const [copied, setCopied] = useState("");
   const tr = useT();
   const trSite = useSiteText();
-
-  function copy(text: string, key: string) {
-    navigator.clipboard?.writeText(text);
-    setCopied(key);
-    setTimeout(() => setCopied(""), 1500);
-  }
 
   if (!hydrated) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
 
@@ -52,12 +45,7 @@ function SuccessInner() {
               </div>
               <p className="mt-1 text-sm text-muted">{tr("checkout.success.paymentHint")}</p>
 
-              <dl className="mt-5 space-y-2 rounded-xl border border-line bg-paper p-4 text-sm">
-                <Req label={tr("payment.bank")} value={site.payment.bank} />
-                <Req label={tr("payment.cardNumber")} value={site.payment.cardNumber} onCopy={() => copy(site.payment.cardNumber, "card")} copied={copied === "card"} copyLabel={tr("common.copy")} />
-                <Req label={tr("payment.recipient")} value={site.payment.cardHolder} />
-                <Req label={tr("payment.amount")} value={formatPrice(order.total)} onCopy={() => copy(String(order.total), "sum")} copied={copied === "sum"} copyLabel={tr("common.copy")} />
-              </dl>
+              <PaymentRequisites amount={order.total} className="mt-5" />
 
               <div className="mt-5">
                 <PaymentUpload orderId={order.id} />
@@ -78,22 +66,6 @@ function SuccessInner() {
 
         <p className="mt-8 text-center text-xs text-muted">{trSite("shippingNote")}</p>
       </div>
-    </div>
-  );
-}
-
-function Req({ label, value, onCopy, copied, copyLabel }: { label: string; value: string; onCopy?: () => void; copied?: boolean; copyLabel?: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-muted">{label}</dt>
-      <dd className="flex items-center gap-2 font-medium text-ink">
-        {value}
-        {onCopy && (
-          <button onClick={onCopy} className="text-faint hover:text-accent" aria-label={copyLabel}>
-            {copied ? <I.Check size={15} className="text-success" /> : <I.Tag size={15} />}
-          </button>
-        )}
-      </dd>
     </div>
   );
 }
