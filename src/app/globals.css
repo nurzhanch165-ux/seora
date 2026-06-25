@@ -10,8 +10,15 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    scroll-behavior: smooth;
     overflow-x: clip;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @media (min-width: 768px) {
+      html {
+        scroll-behavior: smooth;
+      }
+    }
   }
 
   body {
@@ -80,7 +87,7 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ease-smooth active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-5 max-sm:py-2.5 max-sm:text-[13px];
+    @apply inline-flex touch-manipulation items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-smooth active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-5 max-sm:py-2.5 max-sm:text-[13px];
   }
   .btn-primary {
     @apply btn bg-ink text-pearl hover:bg-accent shadow-soft;
@@ -103,7 +110,13 @@
   }
 
   .card {
-    @apply rounded-card border border-line bg-surface shadow-soft transition-shadow duration-300 hover:shadow-lift;
+    @apply rounded-card border border-line bg-surface shadow-soft;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .card {
+      @apply transition-shadow duration-300 hover:shadow-lift;
+    }
   }
 
   .card-flat {
@@ -142,7 +155,7 @@
   }
 
   .grain-overlay {
-    @apply pointer-events-none fixed inset-0 z-[100] bg-grain opacity-40 mix-blend-multiply;
+    @apply pointer-events-none fixed inset-0 z-[100] hidden bg-grain opacity-30 mix-blend-multiply lg:block;
   }
 }
 
@@ -156,6 +169,11 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .perf-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 480px;
   }
 }
 

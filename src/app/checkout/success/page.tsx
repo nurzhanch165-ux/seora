@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { useOrders } from "@/store/orders";
 import { formatPrice } from "@/lib/format";
 import { useHydrated } from "@/lib/useHydrated";
-import { exportOrderExcel } from "@/lib/excel";
+import { exportOrderExcel } from "@/lib/excelLazy";
 import { PaymentUpload } from "@/components/PaymentUpload";
 import { PaymentRequisites } from "@/components/PaymentRequisites";
 import { useT, useSiteText } from "@/hooks/useTranslation";

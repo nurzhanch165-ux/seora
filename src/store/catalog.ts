@@ -6,6 +6,31 @@ import { products as SEED, Product } from "@/data/products";
 import { getSupabase } from "@/lib/supabase/client";
 import { mapProductRow, ProductRow } from "@/lib/supabase/products";
 
+const CATALOG_CACHE_KEY = "sonyshopkorea-catalog-v1";
+const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function readCatalogCache(): Product[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CATALOG_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; products: Product[] };
+    if (Date.now() - parsed.ts > CATALOG_CACHE_TTL_MS) return null;
+    return parsed.products;
+  } catch {
+    return null;
+  }
+}
+
+function writeCatalogCache(products: Product[]) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ ts: Date.now(), products }));
+  } catch {
+    /* quota exceeded — ignore */
+  }
+}
+
 type CatalogState = {
   products: Product[];
   loaded: boolean;
@@ -27,6 +52,15 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
   load: async (force = false) => {
     if (get().loading) return;
     if (get().loaded && !force) return;
+
+    if (!force) {
+      const cached = readCatalogCache();
+      if (cached?.length) {
+        set({ products: cached, loaded: true, loading: false, error: null });
+        return;
+      }
+    }
+
     set({ loading: true, error: null });
     const supabase = getSupabase();
     if (!supabase) {
@@ -42,6 +76,7 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
       return;
     }
     const products = (data as ProductRow[]).map(mapProductRow);
+    writeCatalogCache(products);
     set({ products, loaded: true, loading: false });
   },
 

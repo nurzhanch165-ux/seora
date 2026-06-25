@@ -6,7 +6,7 @@ import { useAuth } from "@/store/auth";
 import { useOrders } from "@/store/orders";
 import { formatPrice, formatDate } from "@/lib/format";
 import { getStatusLabel, statusTone } from "@/lib/types";
-import { exportOrderExcel } from "@/lib/excel";
+import { exportOrderExcel } from "@/lib/excelLazy";
 import { AccountShell } from "@/components/AccountShell";
 import { PaymentUpload } from "@/components/PaymentUpload";
 import { PaymentRequisites } from "@/components/PaymentRequisites";

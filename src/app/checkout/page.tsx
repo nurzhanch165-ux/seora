@@ -12,7 +12,7 @@ import { usePreferences } from "@/store/preferences";
 import { brandName } from "@/data/brands";
 import { site } from "@/data/site";
 import { useHydrated } from "@/lib/useHydrated";
-import { exportOrderExcel } from "@/lib/excel";
+import { exportOrderExcel } from "@/lib/excelLazy";
 import { useExchangeRates } from "@/store/exchangeRates";
 import { convertFromKrw, formatCurrency } from "@/lib/currency";
 import { useT, useSiteText, useLocale } from "@/hooks/useTranslation";

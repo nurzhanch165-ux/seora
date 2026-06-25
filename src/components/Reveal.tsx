@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 type Props = {
   children: ReactNode;
@@ -11,16 +11,22 @@ type Props = {
 export function Reveal({ children, className = "", delay = 0 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [motionEnabled, setMotionEnabled] = useState(false);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
+  useLayoutEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
+    if (reduced || mobile) {
       setVisible(true);
       return;
     }
+    setMotionEnabled(true);
+  }, []);
+
+  useEffect(() => {
+    if (!motionEnabled) return;
+    const el = ref.current;
+    if (!el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -34,12 +40,12 @@ export function Reveal({ children, className = "", delay = 0 }: Props) {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [motionEnabled]);
 
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 ease-smooth ${
+      className={`${motionEnabled ? "transition-[opacity,transform] duration-700 ease-smooth" : ""} ${
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       } ${className}`}
       style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}

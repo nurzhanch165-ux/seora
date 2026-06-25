@@ -1,5 +1,6 @@
 import { IconKey } from "@/data/categories";
 import { Tone } from "@/data/products";
+import Image from "next/image";
 import { Glyph } from "./Glyph";
 
 const tones: Record<Tone, { from: string; to: string; ink: string }> = {
@@ -20,6 +21,7 @@ export function ProductVisual({
   image,
   className = "",
   glyphSize = 56,
+  priority = false,
 }: {
   tone: Tone;
   glyph: IconKey;
@@ -27,14 +29,27 @@ export function ProductVisual({
   image?: string;
   className?: string;
   glyphSize?: number;
+  priority?: boolean;
 }) {
   const t = tones[tone];
 
   if (image) {
+    const remote = image.startsWith("http");
     return (
       <div className={`relative overflow-hidden bg-paper ${className}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt={brand ?? "Товар"} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        {remote ? (
+          <Image
+            src={image}
+            alt={brand ?? "Товар"}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+            className="object-cover"
+            priority={priority}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt={brand ?? "Товар"} loading={priority ? "eager" : "lazy"} decoding="async" className="h-full w-full object-cover" />
+        )}
       </div>
     );
   }
@@ -44,7 +59,6 @@ export function ProductVisual({
       className={`relative flex items-center justify-center overflow-hidden ${className}`}
       style={{ background: `linear-gradient(140deg, ${t.from}, ${t.to})` }}
     >
-      {/* subtle decorative arcs */}
       <svg
         className="absolute inset-0 h-full w-full opacity-[0.35]"
         viewBox="0 0 200 200"

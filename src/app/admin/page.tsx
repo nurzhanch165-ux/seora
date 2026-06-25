@@ -10,7 +10,7 @@ import { Product } from "@/data/products";
 import { brandName } from "@/data/brands";
 import { formatPrice, formatDateShort } from "@/lib/format";
 import { ORDER_STATUSES, OrderStatus, getStatusLabel } from "@/lib/types";
-import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportItemsTotalExcel } from "@/lib/excel";
+import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportItemsTotalExcel } from "@/lib/excelLazy";
 import { buildStreamPositionMap, type StreamPositionMap } from "@/lib/excelCore";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ProductEditor } from "@/components/admin/ProductEditor";

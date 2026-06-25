@@ -31,7 +31,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label={tr("nav.mobileBottom")}
-      className="sticky bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-md md:hidden"
+      className="sticky bottom-0 z-30 border-t border-line bg-surface md:hidden"
     >
       <div className="container-site grid grid-cols-4 gap-0.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1">
         {items.map(({ href, label, icon: Icon, match, badge }) => {

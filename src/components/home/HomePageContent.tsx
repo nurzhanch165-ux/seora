@@ -52,11 +52,21 @@ function BrandMarquee() {
   return (
     <section className="border-y border-line bg-surface py-4" aria-hidden="true">
       <div className="overflow-hidden">
-        <div className="flex w-max animate-marquee gap-12 px-4">
+        <div className="hidden w-max animate-marquee gap-12 px-4 md:flex">
           {items.map((brand, i) => (
             <span
               key={`${brand}-${i}`}
               className="whitespace-nowrap font-display text-sm font-semibold tracking-widest2 text-ink/30"
+            >
+              {brand}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 px-4 md:hidden">
+          {BRAND_STRIP.map((brand) => (
+            <span
+              key={brand}
+              className="whitespace-nowrap font-display text-xs font-semibold tracking-widest2 text-ink/30"
             >
               {brand}
             </span>

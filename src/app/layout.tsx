@@ -16,14 +16,14 @@ import { getRequestLocale } from "@/lib/locale.server";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   variable: "--font-display",
   display: "swap",
 });
 
 const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   variable: "--font-sans",
   display: "swap",
 });

@@ -51,7 +51,7 @@ export function ProductCard({ product: rawProduct, streamClosed, streamContext, 
             glyph={product.glyph}
             brand={brandName(product.brandSlug)}
             image={product.images?.[0]}
-            className="aspect-[4/5] w-full transition-transform duration-700 ease-smooth group-hover:scale-[1.03]"
+            className="aspect-[4/5] w-full md:transition-transform md:duration-700 md:ease-smooth md:group-hover:scale-[1.03]"
           />
         </Link>
 
