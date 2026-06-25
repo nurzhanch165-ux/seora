@@ -17,10 +17,9 @@ type AdminAuthState = {
 
 export const useAdminAuth = create<AdminAuthState>()((set) => ({
   loggedIn: false,
-  ready: false,
+  ready: true,
 
   check: async () => {
-    set({ ready: false });
     try {
       const res = await fetch("/api/admin/me", { cache: "no-store" });
       const json = await res.json().catch(() => ({}));

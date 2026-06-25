@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useAuth } from "@/store/auth";
 import { useAdminAuth } from "@/store/adminAuth";
 import { useHydrated } from "@/lib/useHydrated";
@@ -17,8 +17,6 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
   const account = useAuth((s) => s.current);
   const logout = useAuth((s) => s.logout);
   const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
-  const adminReady = useAdminAuth((s) => s.ready);
-  const adminCheck = useAdminAuth((s) => s.check);
   const tr = useT();
 
   const nav = useMemo(
@@ -30,11 +28,7 @@ export function AccountShell({ children, title }: { children: React.ReactNode; t
     [tr]
   );
 
-  useEffect(() => {
-    adminCheck();
-  }, [adminCheck]);
-
-  if (!hydrated || !adminReady) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
+  if (!hydrated) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
 
   if (!account && !adminLoggedIn) {
     return (

@@ -8,6 +8,8 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartToast } from "@/components/CartToast";
 import { ExchangeRatesLoader } from "@/components/ExchangeRatesLoader";
 import { LocaleSync } from "@/components/LocaleSync";
+import { CatalogLoader } from "@/components/CatalogLoader";
+import { AdminAuthLoader } from "@/components/AdminAuthLoader";
 import { CustomerSessionLoader } from "@/components/CustomerSessionLoader";
 import { site } from "@/data/site";
 import { t } from "@/lib/i18n";
@@ -50,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ru" className={`${onest.variable} ${manrope.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-pearl antialiased">
-        <div className="grain-overlay" aria-hidden="true" />
         <Header />
         <main className="flex min-h-[60vh] flex-col">
           <div className="min-w-0 flex-1">{children}</div>
@@ -59,6 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <ScrollToTop />
         <CartToast />
+        <CatalogLoader />
+        <AdminAuthLoader />
         <ExchangeRatesLoader />
         <LocaleSync />
         <CustomerSessionLoader />

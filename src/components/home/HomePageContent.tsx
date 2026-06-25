@@ -48,30 +48,17 @@ export function HomePageContent() {
 }
 
 function BrandMarquee() {
-  const items = [...BRAND_STRIP, ...BRAND_STRIP];
   return (
     <section className="border-y border-line bg-surface py-4" aria-hidden="true">
-      <div className="overflow-hidden">
-        <div className="hidden w-max animate-marquee gap-12 px-4 md:flex">
-          {items.map((brand, i) => (
-            <span
-              key={`${brand}-${i}`}
-              className="whitespace-nowrap font-display text-sm font-semibold tracking-widest2 text-ink/30"
-            >
-              {brand}
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 px-4 md:hidden">
-          {BRAND_STRIP.map((brand) => (
-            <span
-              key={brand}
-              className="whitespace-nowrap font-display text-xs font-semibold tracking-widest2 text-ink/30"
-            >
-              {brand}
-            </span>
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2 px-4">
+        {BRAND_STRIP.map((brand) => (
+          <span
+            key={brand}
+            className="whitespace-nowrap font-display text-sm font-semibold tracking-widest2 text-ink/30"
+          >
+            {brand}
+          </span>
+        ))}
       </div>
     </section>
   );
@@ -102,7 +89,7 @@ function AboutBlock() {
                 <Link
                   key={s.slug}
                   href={`/c/${s.slug}`}
-                  className="group border border-line bg-surface p-3 transition-all hover:border-accent/40 hover:shadow-lift sm:p-5"
+                  className="group border border-line bg-surface p-3 transition-[border-color,box-shadow] hover:border-accent/40 sm:p-5 md:hover:shadow-lift"
                 >
                   <p className="text-[10px] uppercase tracking-wider text-faint">{sectionTagline(s.slug, locale)}</p>
                   <p className="mt-2 font-display text-lg font-semibold text-ink group-hover:text-accent">
@@ -140,9 +127,9 @@ function CategoriesBlock() {
             <Reveal key={c.slug} delay={i * 60}>
               <Link
                 href={c.href}
-                className="group flex min-w-0 flex-col items-center gap-3 border border-line bg-surface p-5 text-center transition-all hover:border-accent/30 hover:shadow-soft"
+                className="group flex min-w-0 flex-col items-center gap-3 border border-line bg-surface p-5 text-center transition-[border-color,box-shadow] hover:border-accent/30 md:hover:shadow-soft"
               >
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent transition-transform duration-300 group-hover:scale-105">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent md:transition-transform md:duration-300 md:group-hover:scale-105">
                   <Glyph name={c.icon} size={26} />
                 </span>
                 <span className="line-clamp-2 text-sm font-medium text-ink">{tr(c.nameKey)}</span>

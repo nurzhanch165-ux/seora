@@ -36,8 +36,6 @@ export default function CheckoutPage() {
   const router = useRouter();
   const account = useAuth((s) => s.current);
   const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
-  const adminReady = useAdminAuth((s) => s.ready);
-  const adminCheck = useAdminAuth((s) => s.check);
   const currency = usePreferences((s) => s.currency);
   const rates = useExchangeRates((s) => s.rates);
   const tr = useT();
@@ -113,10 +111,6 @@ export default function CheckoutPage() {
   }, [deliveryMethods, methodId]);
 
   useEffect(() => {
-    adminCheck();
-  }, [adminCheck]);
-
-  useEffect(() => {
     if (account) {
       setCustomer({
         lastName: account.lastName, firstName: account.firstName, middleName: account.middleName,
@@ -132,7 +126,7 @@ export default function CheckoutPage() {
     }
   }, [account]);
 
-  if (!hydrated || !adminReady) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
+  if (!hydrated) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
 
   if (items.length === 0) {
     return (

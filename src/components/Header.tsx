@@ -26,7 +26,6 @@ export function Header() {
   const wishCount = useWishlist((s) => s.ids.length);
   const currentId = useAuth((s) => s.current?.id ?? null);
   const adminLoggedIn = useAdminAuth((s) => s.loggedIn);
-  const adminCheck = useAdminAuth((s) => s.check);
 
   const [mega, setMega] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -46,10 +45,6 @@ export function Header() {
     setMobileOpen(false);
     setSearchOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    adminCheck();
-  }, [adminCheck]);
 
   function openMega(slug: string) {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -93,7 +88,7 @@ export function Header() {
   return (
     <>
       <div className="relative z-40">
-      <header className="relative border-b border-line bg-pearl shadow-soft">
+      <header className="relative border-b border-line bg-pearl">
         <div className="hidden border-b border-line/60 bg-ink md:block">
           <div className="container-site flex h-9 items-center gap-3 text-[11px] text-pearl/80">
             <span className="min-w-0 flex-1 whitespace-nowrap">{tr("topbar.tagline")}</span>
@@ -201,7 +196,7 @@ export function Header() {
 
         {mega && (
           <div
-            className="absolute inset-x-0 top-full hidden border-t border-line bg-surface shadow-lift lg:block"
+            className="absolute inset-x-0 top-full hidden border-t border-line bg-surface lg:block"
             onMouseEnter={() => openMega(mega)}
             onMouseLeave={scheduleClose}
           >

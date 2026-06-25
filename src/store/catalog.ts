@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 import { products as SEED, Product } from "@/data/products";
-import { getSupabase } from "@/lib/supabase/client";
-import { mapProductRow, ProductRow } from "@/lib/supabase/products";
 
 const CATALOG_CACHE_KEY = "sonyshopkorea-catalog-v1";
 const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -43,7 +41,6 @@ type CatalogState = {
 };
 
 export const useCatalog = create<CatalogState>()((set, get) => ({
-  // До загрузки показываем seed, чтобы не было пустого экрана/рассинхрона
   products: SEED,
   loaded: false,
   loading: false,
@@ -62,22 +59,18 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
     }
 
     set({ loading: true, error: null });
-    const supabase = getSupabase();
-    if (!supabase) {
-      set({ loading: false, error: "Supabase не настроен." });
-      return;
+    try {
+      const res = await fetch("/api/products", { credentials: "same-origin" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(json.products)) {
+        set({ loading: false, error: json.error ?? "Не удалось загрузить каталог." });
+        return;
+      }
+      writeCatalogCache(json.products as Product[]);
+      set({ products: json.products as Product[], loaded: true, loading: false });
+    } catch {
+      set({ loading: false, error: "Не удалось загрузить каталог." });
     }
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      set({ loading: false, error: error.message });
-      return;
-    }
-    const products = (data as ProductRow[]).map(mapProductRow);
-    writeCatalogCache(products);
-    set({ products, loaded: true, loading: false });
   },
 
   addProduct: async (product) => {
@@ -115,14 +108,8 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
   },
 }));
 
-/** Товары витрины (только активные). Админка использует useCatalog().products напрямую. */
 export function useCatalogProducts(): Product[] {
   const products = useCatalog((s) => s.products);
-  const loaded = useCatalog((s) => s.loaded);
-  const loading = useCatalog((s) => s.loading);
-  useEffect(() => {
-    if (!loaded && !loading) useCatalog.getState().load();
-  }, [loaded, loading]);
   return products.filter((p) => p.active !== false);
 }
 
