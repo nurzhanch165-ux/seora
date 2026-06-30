@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,15 +14,28 @@ import { ORDER_STATUSES, OrderStatus, getStatusLabel } from "@/lib/types";
 import { exportOrderExcel, exportWarehouseExcel, exportDailyOrdersExcel, exportItemsTotalExcel } from "@/lib/excelLazy";
 import { buildStreamPositionMap, type StreamPositionMap } from "@/lib/excelCore";
 import { ProductVisual } from "@/components/ProductVisual";
-import { ProductEditor } from "@/components/admin/ProductEditor";
-import { StreamAnnouncePanel } from "@/components/admin/StreamAnnouncePanel";
-import { CategoryEditor } from "@/components/admin/CategoryEditor";
-import { StreamEditor } from "@/components/admin/StreamEditor";
 import { PaymentRequisites } from "@/components/PaymentRequisites";
 import { useCatalogTree } from "@/store/catalogTree";
 import { useAdminSession } from "@/hooks/useAdminSession";
 import { useT, useLocale } from "@/hooks/useTranslation";
 import * as I from "@/components/icons";
+
+const ProductEditor = dynamic(
+  () => import("@/components/admin/ProductEditor").then((m) => ({ default: m.ProductEditor })),
+  { ssr: false, loading: () => <div className="py-8 text-center text-muted">…</div> }
+);
+const CategoryEditor = dynamic(
+  () => import("@/components/admin/CategoryEditor").then((m) => ({ default: m.CategoryEditor })),
+  { ssr: false }
+);
+const StreamEditor = dynamic(
+  () => import("@/components/admin/StreamEditor").then((m) => ({ default: m.StreamEditor })),
+  { ssr: false }
+);
+const StreamAnnouncePanel = dynamic(
+  () => import("@/components/admin/StreamAnnouncePanel").then((m) => ({ default: m.StreamAnnouncePanel })),
+  { ssr: false }
+);
 
 type Tab = "orders" | "warehouse" | "products" | "streams" | "customers";
 
@@ -37,12 +51,11 @@ export default function AdminPage() {
   const loadCatalogTree = useCatalogTree((s) => s.load);
 
   useEffect(() => {
-    if (checked && loggedIn) {
-      loadAll();
-      loadCatalog();
-      loadCatalogTree();
-    }
-  }, [checked, loggedIn, loadAll, loadCatalog, loadCatalogTree]);
+    if (!checked || !loggedIn) return;
+    if (tab === "orders" || tab === "warehouse") loadAll();
+    if (tab === "products" || tab === "warehouse") loadCatalog();
+    if (tab === "products" || tab === "streams") loadCatalogTree();
+  }, [checked, loggedIn, tab, loadAll, loadCatalog, loadCatalogTree]);
 
   if (!checked) return <div className="container-site py-20 text-center text-muted">{tr("common.loading")}</div>;
   if (!loggedIn) return <div className="container-site py-20 text-center text-muted">{tr("admin.redirecting")}</div>;
@@ -95,14 +108,37 @@ function OrdersAdmin() {
   const tr = useT();
   const locale = useLocale();
   const orders = useOrders((s) => s.orders);
+  const upsertLocal = useOrders((s) => s.upsertLocal);
   const setStatus = useOrders((s) => s.setStatus);
   const confirmPayment = useOrders((s) => s.confirmPayment);
   const updateAdminComment = useOrders((s) => s.updateAdminComment);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [screenshotUrls, setScreenshotUrls] = useState<Record<string, string>>({});
+  const [loadingScreenshot, setLoadingScreenshot] = useState<string | null>(null);
   const [filterCountry, setFilterCountry] = useState("");
   const [filterDelivery, setFilterDelivery] = useState("");
   const [filterPayment, setFilterPayment] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+
+  useEffect(() => {
+    if (!openId) return;
+    const order = orders.find((o) => o.id === openId);
+    if (!order?.hasPaymentScreenshot || order.paymentScreenshot || screenshotUrls[openId]) return;
+
+    let cancelled = false;
+    setLoadingScreenshot(openId);
+    void fetch(`/api/orders/${openId}/screenshot`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled || !json.url) return;
+        setScreenshotUrls((prev) => ({ ...prev, [openId]: json.url as string }));
+        upsertLocal({ ...order, paymentScreenshot: json.url as string });
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingScreenshot(null);
+      });
+    return () => { cancelled = true; };
+  }, [openId, orders, screenshotUrls, upsertLocal]);
 
   const filtered = useMemo(() => orders.filter((o) => {
     if (filterCountry && !(o.customer.country.includes(filterCountry) || o.delivery.country.includes(filterCountry))) return false;
@@ -237,12 +273,19 @@ function OrdersAdmin() {
                     </div>
 
                     <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">{tr("admin.orders.paymentScreenshot")}</h4>
-                    {order.paymentScreenshot ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={order.paymentScreenshot} alt="" className="max-h-56 rounded-lg border border-line" />
-                    ) : (
-                      <p className="text-sm text-muted">{tr("admin.orders.noScreenshot")}</p>
-                    )}
+                    {(() => {
+                      const shotUrl = order.paymentScreenshot ?? screenshotUrls[order.id];
+                      if (loadingScreenshot === order.id) {
+                        return <p className="text-sm text-muted">{tr("common.loading")}</p>;
+                      }
+                      if (shotUrl) {
+                        return (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={shotUrl} alt="" className="max-h-56 rounded-lg border border-line" />
+                        );
+                      }
+                      return <p className="text-sm text-muted">{tr("admin.orders.noScreenshot")}</p>;
+                    })()}
 
                     <h4 className="mb-3 mt-4 text-xs font-semibold uppercase tracking-wider text-ink">{tr("payment.requisitesTitle")}</h4>
                     <PaymentRequisites amount={order.total} />
@@ -596,20 +639,47 @@ function ProductsPanelNav({
 function ProductsAdmin() {
   const tr = useT();
   const all = useCatalog((s) => s.products);
+  const fetchProduct = useCatalog((s) => s.fetchProduct);
   const addProduct = useCatalog((s) => s.addProduct);
   const updateProduct = useCatalog((s) => s.updateProduct);
   const removeProduct = useCatalog((s) => s.removeProduct);
 
   const [panel, setPanel] = useState<"products" | "catalog">("products");
-  // mode: "list" | "new" | id редактируемого товара
   const [mode, setMode] = useState<"list" | "new" | string>("list");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [actionError, setActionError] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [loadingEdit, setLoadingEdit] = useState(false);
 
-  const editing = useMemo(
-    () => (mode !== "list" && mode !== "new" ? all.find((p) => p.id === mode) : undefined),
-    [all, mode]
-  );
+  const PAGE_SIZE = 30;
+
+  useEffect(() => {
+    setPage(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (mode === "list" || mode === "new") {
+      setEditingProduct(undefined);
+      return;
+    }
+    const cached = all.find((p) => p.id === mode);
+    if (cached?.fullDescription) {
+      setEditingProduct(cached);
+      return;
+    }
+    let cancelled = false;
+    setLoadingEdit(true);
+    void fetchProduct(mode, "id").then((p) => {
+      if (!cancelled) {
+        setEditingProduct(p ?? cached);
+        setLoadingEdit(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [mode, all, fetchProduct]);
+
+  const editing = mode !== "list" && mode !== "new" ? editingProduct : undefined;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -618,6 +688,9 @@ function ProductsAdmin() {
       (p) => `${p.name} ${brandName(p.brandSlug)}`.toLowerCase().includes(q)
     );
   }, [all, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (mode === "new") {
     return (
@@ -642,7 +715,23 @@ function ProductsAdmin() {
     );
   }
 
-  if (editing) {
+  if (editing || (mode !== "list" && mode !== "new" && loadingEdit)) {
+    if (loadingEdit && !editing) {
+      return (
+        <div>
+          <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} onCatalog={() => setMode("list")} />
+          <div className="card py-20 text-center text-muted">{tr("common.loading")}</div>
+        </div>
+      );
+    }
+    if (!editing) {
+      return (
+        <div>
+          <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} onCatalog={() => setMode("list")} />
+          <div className="card py-20 text-center text-muted">{tr("product.notFound")}</div>
+        </div>
+      );
+    }
     return (
       <div>
         <ProductsPanelNav panel={panel} setPanel={setPanel} tr={tr} onCatalog={() => setMode("list")} />
@@ -702,7 +791,7 @@ function ProductsAdmin() {
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((p) => (
+        {paged.map((p) => (
           <div key={p.id} className="flex min-w-0 gap-3 rounded-xl2 border border-line bg-surface p-3">
             <ProductVisual
               tone={p.tone}
@@ -735,6 +824,30 @@ function ProductsAdmin() {
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            className="btn-outline px-4 py-2 text-sm disabled:opacity-40"
+          >
+            ←
+          </button>
+          <span className="text-sm text-muted">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            className="btn-outline px-4 py-2 text-sm disabled:opacity-40"
+          >
+            →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

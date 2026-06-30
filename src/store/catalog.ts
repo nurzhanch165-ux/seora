@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { create } from "zustand";
-import { products as SEED, Product } from "@/data/products";
+import type { Product } from "@/data/products";
 
-const CATALOG_CACHE_KEY = "sonyshopkorea-catalog-v1";
+const CATALOG_CACHE_KEY = "sonyshopkorea-catalog-v2";
 const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function readCatalogCache(): Product[] | null {
@@ -29,19 +29,28 @@ function writeCatalogCache(products: Product[]) {
   }
 }
 
+function mergeProduct(list: Product[], saved: Product): Product[] {
+  const idx = list.findIndex((p) => p.id === saved.id);
+  if (idx === -1) return [saved, ...list];
+  const next = [...list];
+  next[idx] = saved;
+  return next;
+}
+
 type CatalogState = {
   products: Product[];
   loaded: boolean;
   loading: boolean;
   error: string | null;
   load: (force?: boolean) => Promise<void>;
+  fetchProduct: (idOrSlug: string, by?: "id" | "slug") => Promise<Product | null>;
   addProduct: (product: Product) => Promise<{ ok: boolean; error?: string }>;
   updateProduct: (id: string, patch: Partial<Product>) => Promise<{ ok: boolean; error?: string }>;
   removeProduct: (id: string) => Promise<{ ok: boolean; error?: string }>;
 };
 
 export const useCatalog = create<CatalogState>()((set, get) => ({
-  products: SEED,
+  products: [],
   loaded: false,
   loading: false,
   error: null,
@@ -73,6 +82,26 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
     }
   },
 
+  fetchProduct: async (idOrSlug, by = "id") => {
+    try {
+      const q = by === "id" ? `?by=id` : "";
+      const res = await fetch(`/api/products/${encodeURIComponent(idOrSlug)}${q}`, {
+        credentials: "same-origin",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.product) return null;
+      const product = json.product as Product;
+      set((state) => {
+        const products = mergeProduct(state.products, product);
+        writeCatalogCache(products);
+        return { products };
+      });
+      return product;
+    } catch {
+      return null;
+    }
+  },
+
   addProduct: async (product) => {
     const res = await fetch("/api/admin/products", {
       method: "POST",
@@ -81,7 +110,12 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: json.error ?? "Не удалось сохранить товар." };
-    await get().load(true);
+    const saved = (json.product as Product) ?? product;
+    set((state) => {
+      const products = mergeProduct(state.products, saved);
+      writeCatalogCache(products);
+      return { products, loaded: true };
+    });
     return { ok: true };
   },
 
@@ -95,7 +129,12 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: json.error ?? "Не удалось сохранить товар." };
-    await get().load(true);
+    const saved = (json.product as Product) ?? merged;
+    set((state) => {
+      const products = mergeProduct(state.products, saved);
+      writeCatalogCache(products);
+      return { products };
+    });
     return { ok: true };
   },
 
@@ -103,7 +142,11 @@ export const useCatalog = create<CatalogState>()((set, get) => ({
     const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: json.error ?? "Не удалось удалить товар." };
-    set((state) => ({ products: state.products.filter((p) => p.id !== id) }));
+    set((state) => {
+      const products = state.products.filter((p) => p.id !== id);
+      writeCatalogCache(products);
+      return { products };
+    });
     return { ok: true };
   },
 }));

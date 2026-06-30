@@ -4,6 +4,37 @@ import { isAdminRequest } from "@/lib/adminAuth.server";
 import { getCustomerIdFromRequest } from "@/lib/customerSession.server";
 import { buildOrders, SCREENSHOT_BUCKET } from "@/lib/supabase/orders";
 
+export async function GET(_req: Request, { params }: { params: { id: string } }) {
+  const sessionId = getCustomerIdFromRequest();
+  const isAdmin = isAdminRequest();
+  if (!isAdmin && !sessionId) {
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+  }
+
+  const admin = createAdminClient();
+  const { data: row, error } = await admin
+    .from("orders")
+    .select("payment_screenshot, customer_id")
+    .eq("id", params.id)
+    .maybeSingle();
+
+  if (error || !row?.payment_screenshot) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+  if (!isAdmin && row.customer_id !== sessionId) {
+    return NextResponse.json({ error: "auth.notAuthorized" }, { status: 403 });
+  }
+
+  const { data } = await admin.storage
+    .from(SCREENSHOT_BUCKET)
+    .createSignedUrl(row.payment_screenshot, 60 * 60);
+
+  if (!data?.signedUrl) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+  return NextResponse.json({ url: data.signedUrl });
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const sessionId = getCustomerIdFromRequest();
   const isAdmin = isAdminRequest();

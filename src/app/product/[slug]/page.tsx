@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getSection, getCategory } from "@/data/categories";
 import { Product } from "@/data/products";
 import { useCatalogProducts } from "@/store/catalog";
@@ -27,10 +27,24 @@ function getRelated(all: Product[], product: Product, limit = 4): Product[] {
 export default function ProductPage({ params }: Props) {
   const hydrated = useHydrated();
   const all = useCatalogProducts();
-  const product = useMemo(() => all.find((p) => p.slug === params.slug), [all, params.slug]);
-  const related = useMemo(() => (product ? getRelated(all, product) : []), [all, product]);
+  const listProduct = useMemo(() => all.find((p) => p.slug === params.slug), [all, params.slug]);
+  const [fullProduct, setFullProduct] = useState<Product | null>(null);
   const tr = useT();
   const locale = useLocale();
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(`/api/products/${encodeURIComponent(params.slug)}`, { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((json) => {
+        if (!cancelled && json.product) setFullProduct(json.product as Product);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [params.slug]);
+
+  const product = fullProduct ?? listProduct;
+  const related = useMemo(() => (product ? getRelated(all, product) : []), [all, product]);
 
   if (!product) {
     if (!hydrated) {

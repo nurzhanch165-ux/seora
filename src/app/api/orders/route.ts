@@ -23,7 +23,7 @@ export async function GET() {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const orders = await buildOrders(admin, data ?? []);
+  const orders = await buildOrders(admin, data ?? [], { signScreenshots: !isAdmin });
   return NextResponse.json({ orders });
 }
 

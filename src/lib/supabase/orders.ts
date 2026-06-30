@@ -55,8 +55,10 @@ async function signedScreenshot(
 export async function mapOrderRow(
   admin: SupabaseClient,
   row: OrderRow,
-  itemRows: OrderItemRow[]
+  itemRows: OrderItemRow[],
+  options?: { signScreenshots?: boolean }
 ): Promise<Order> {
+  const signScreenshots = options?.signScreenshots !== false;
   const items: OrderItem[] = itemRows.map((it) => ({
     productId: it.product_id,
     slug: it.slug,
@@ -87,14 +89,16 @@ export async function mapOrderRow(
     comment: row.comment ?? "",
     adminComment: row.admin_comment ?? "",
     status: row.status as OrderStatus,
-    paymentScreenshot: await signedScreenshot(admin, row.payment_screenshot),
+    paymentScreenshot: signScreenshots ? await signedScreenshot(admin, row.payment_screenshot) : null,
+    hasPaymentScreenshot: !!row.payment_screenshot,
     paymentConfirmed: row.payment_confirmed,
   };
 }
 
 export async function buildOrders(
   admin: SupabaseClient,
-  orderRows: OrderRow[]
+  orderRows: OrderRow[],
+  options?: { signScreenshots?: boolean }
 ): Promise<Order[]> {
   if (orderRows.length === 0) return [];
   const ids = orderRows.map((o) => o.id);
@@ -106,5 +110,5 @@ export async function buildOrders(
     arr.push(it);
     byOrder.set(it.order_id, arr);
   }
-  return Promise.all(orderRows.map((row) => mapOrderRow(admin, row, byOrder.get(row.id) ?? [])));
+  return Promise.all(orderRows.map((row) => mapOrderRow(admin, row, byOrder.get(row.id) ?? [], options)));
 }

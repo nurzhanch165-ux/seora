@@ -139,6 +139,8 @@ export type Order = {
   adminComment?: string;
   status: OrderStatus;
   paymentScreenshot?: string | null;
+  /** Storage path exists — signed URL loaded on demand in admin. */
+  hasPaymentScreenshot?: boolean;
   paymentConfirmed: boolean;
 };
 

@@ -8,6 +8,7 @@ import { useT } from "@/hooks/useTranslation";
 import { useCatalogExtras } from "@/store/catalogTree";
 import { mergeBrands, mergeSections, brandSlugFromName } from "@/lib/catalogTree";
 import { inferProductWeightKg, formatWeightKg } from "@/lib/productWeight";
+import { compressImageFiles } from "@/lib/compressImage";
 import * as I from "@/components/icons";
 
 const ICONS: IconKey[] = [
@@ -35,12 +36,18 @@ function translit(s: string): string {
 }
 
 async function uploadFiles(files: FileList): Promise<string[]> {
-  const fd = new FormData();
-  Array.from(files).forEach((file) => fd.append("files", file));
-  const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error ?? "Не удалось загрузить фото.");
-  return (json.urls as string[]) ?? [];
+  const compressed = await compressImageFiles(files);
+  const results = await Promise.all(
+    compressed.map(async (file) => {
+      const fd = new FormData();
+      fd.append("files", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Не удалось загрузить фото.");
+      return (json.urls as string[])?.[0] ?? "";
+    })
+  );
+  return results.filter(Boolean);
 }
 
 type EditorState = {

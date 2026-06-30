@@ -39,6 +39,44 @@ export type ProductRow = {
   i18n?: Record<string, unknown> | null;
 };
 
+/** Columns for public catalog list — excludes long text fields. */
+export const PRODUCT_LIST_SELECT =
+  "id,slug,name,brand_slug,section_slug,category_slug,sub_slug,glyph,tone,images,price,old_price,short_description,stock,rating,reviews,tags,sku,active,weight_kg,i18n";
+
+function slimProductI18n(i18n: ProductI18n | undefined): ProductI18n | undefined {
+  if (!i18n) return undefined;
+  const out: ProductI18n = {};
+  for (const locale of ["en", "ko"] as const) {
+    const loc = i18n[locale];
+    if (!loc) continue;
+    const slim: Record<string, string> = {};
+    if (loc.name?.trim()) slim.name = loc.name;
+    if (loc.shortDescription?.trim()) slim.shortDescription = loc.shortDescription;
+    if (Object.keys(slim).length) out[locale] = slim;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** Slim row for catalog grids — long fields omitted to keep payload small. */
+export function mapProductRowList(row: ProductRow): Product {
+  const p = mapProductRow(row);
+  return {
+    ...p,
+    fullDescription: "",
+    usage: "",
+    result: "",
+    howToUse: "",
+    volume: "",
+    weight: "",
+    shelfLife: "",
+    monthsSupply: "",
+    country: "",
+    manufacturer: "",
+    certificates: [],
+    i18n: slimProductI18n(p.i18n),
+  };
+}
+
 export function mapProductRow(row: ProductRow): Product {
   const images = row.images && row.images.length ? row.images : undefined;
   return {
